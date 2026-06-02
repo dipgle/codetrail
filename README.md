@@ -28,7 +28,7 @@ Codetrail fixes this mechanically:
 
 ```bash
 # One-line setup
-curl -fsSL https://codetrail.dipgle.com/install.sh | bash
+curl -fsSL https://codetrail.dipgle.com/install.txt | bash
 
 # Then for any new project:
 np my-app          # scaffolds + opens Claude Code

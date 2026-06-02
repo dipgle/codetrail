@@ -182,6 +182,75 @@
       </ol>
     </section>
 
+    <section class="install" id="install">
+      <h2 data-i18n="inst.title">Install in 30 seconds</h2>
+      <p class="lede" data-i18n="inst.lede">Two helpers: <code>np</code> for new projects, <code>adopt</code> for existing ones. Works on macOS, Linux, and WSL2.</p>
+      <div class="install-card">
+        <div class="install-step">
+          <div class="step-num">1</div>
+          <div class="step-body">
+            <h3 data-i18n="inst.s1t">Add the helpers to your shell</h3>
+            <pre><code>curl -fsSL https://codetrail.dipgle.com/install.txt | bash
+source ~/.zshrc</code></pre>
+          </div>
+        </div>
+        <div class="install-step">
+          <div class="step-num">2</div>
+          <div class="step-body">
+            <h3 data-i18n="inst.s2t">Start a new project</h3>
+            <pre><code>np my-app          # scaffolds + opens Claude Code
+
+# or adopt an existing project:
+cd /path/to/repo
+adopt</code></pre>
+          </div>
+        </div>
+        <div class="install-step">
+          <div class="step-num">3</div>
+          <div class="step-body">
+            <h3 data-i18n="inst.s3t">That's it</h3>
+            <p data-i18n="inst.s3b">PostToolUse and SessionStart hooks register globally. Every Edit/Write auto-logs. Open Claude Code in any project — Codetrail runs in the background.</p>
+          </div>
+        </div>
+      </div>
+      <p class="install-meta">
+        <span data-i18n="inst.meta">Reviewing first?</span>
+        <a href="https://github.com/dipgle/codetrail" target="_blank" rel="noopener" data-i18n="inst.viewSource">View source on GitHub</a>
+        <span class="dot-sep">·</span>
+        <a href="https://github.com/dipgle/codetrail/blob/main/hooks/devlog-artifact.sh" target="_blank" rel="noopener" data-i18n="inst.viewHook">See the hook code</a>
+      </p>
+    </section>
+
+    <section class="faq" id="faq">
+      <h2 data-i18n="faq.title">Honest answers to the questions you'd actually ask</h2>
+      <div class="faq-grid">
+        <details>
+          <summary data-i18n="faq.q1">How is this different from Claude Code's built-in auto-memory?</summary>
+          <p data-i18n="faq.a1">Auto-memory is chat-style — it summarizes conversations into prose. Codetrail is structural: every file edit becomes an <code>artifact</code> event with path, timestamp, and tool. Every decision is a typed <code>decision</code> row. Every test run records pass/fail with notes. You can query, filter, and audit. The two are complementary; we plug into hooks while auto-memory runs at the model layer.</p>
+        </details>
+        <details>
+          <summary data-i18n="faq.q2">Does my code leave my machine?</summary>
+          <p data-i18n="faq.a2">On the Free tier: no. Hooks write to <code>logs/devlog.sqlite</code> on your disk. The web viewer parses SQLite in your browser via WASM — zero upload. On Pro/Team, you opt in to cloud sync per project; we store the SQLite encrypted at rest and never train models on your data. See the <a href="/privacy.html">privacy policy</a>.</p>
+        </details>
+        <details>
+          <summary data-i18n="faq.q3">What if Claude Code changes its hook API?</summary>
+          <p data-i18n="faq.a3">The hooks live in <code>~/.claude/settings.json</code> and shell out to plain bash scripts that only depend on <code>sqlite3</code> and Python 3. If the schema or matcher format changes, we ship an update — the migration is a one-line settings edit. The devlog format is independent and we'll always provide a converter.</p>
+        </details>
+        <details>
+          <summary data-i18n="faq.q4">Is the code open source?</summary>
+          <p data-i18n="faq.a4">The hooks, landing, project template, and SDK clients are MIT — see <a href="https://github.com/dipgle/codetrail">github.com/dipgle/codetrail</a>. The MCP server binary (<code>project-agent</code>) is closed source; the free tier always includes the hosted binary download under a permissive EULA.</p>
+        </details>
+        <details>
+          <summary data-i18n="faq.q5">I already use Cursor / Aider — can I still use Codetrail?</summary>
+          <p data-i18n="faq.a5">Codetrail's hooks are Claude Code-specific (they hook into Claude Code's PostToolUse / SessionStart events). The browser viewer is editor-agnostic — drop any compatible SQLite there. Aider and Cursor integrations aren't on the roadmap but the schema is documented; community PRs welcome.</p>
+        </details>
+        <details>
+          <summary data-i18n="faq.q6">Pricing in VND?</summary>
+          <p data-i18n="faq.a6">Yes — Pro is ~225 000đ/tháng, Team ~725 000đ/user/tháng at current rates. We accept VietQR, MoMo, and bank transfer for Vietnamese customers, Stripe for everyone else. Annual billing saves 20% on both currencies.</p>
+        </details>
+      </div>
+    </section>
+
     <section class="pricing" id="pricing">
       <h2 data-i18n="price.title">Pricing</h2>
       <p class="lede" data-i18n="price.lede">Free forever for solo work. Pay only when you sync across machines or share with a team.</p>
@@ -240,6 +309,18 @@
       <p class="price-note" data-i18n="price.note">All paid plans start with a 14-day no-card trial. Annual billing saves 20%. Educational / open-source projects: Pro free — just email us.</p>
     </section>
 
+    <section class="oss-cta">
+      <div class="oss-card">
+        <div class="oss-text">
+          <h3 data-i18n="oss.title">Open source on GitHub</h3>
+          <p data-i18n="oss.lede">Landing, hooks, project template, SDK — MIT-licensed. Drop a star if Codetrail saves you time; file an issue if it doesn't.</p>
+        </div>
+        <a class="btn primary" href="https://github.com/dipgle/codetrail" target="_blank" rel="noopener">
+          <span aria-hidden="true">★</span> <span data-i18n="oss.cta">Star on GitHub</span>
+        </a>
+      </div>
+    </section>
+
     <section class="waitlist" id="waitlist">
       <h2 data-i18n="wait.title">Get early access</h2>
       <p data-i18n="wait.lede">We're opening the beta to a small batch of Claude Code power users first. Drop your email and we'll send the install link.</p>
@@ -274,7 +355,7 @@
         <a href="/privacy.html" data-i18n="foot.privacy">Privacy</a>
       </div>
     </div>
-    <small data-i18n="foot.credit">© Codetrail — Powered by tfl5</small>
+    <small>© Codetrail — <span data-i18n="foot.powered">Powered by</span> <a href="https://landing.tafalo.com/" target="_blank" rel="noopener">tfl5</a></small>
   </footer>
   <script src="/script.js"></script>
 </body>

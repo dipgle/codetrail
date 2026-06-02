@@ -1,0 +1,50 @@
+#!/usr/bin/env bash
+# Codetrail — install np + adopt helpers into ~/.zshrc.
+# Safe to re-run (checks for existing functions before appending).
+#
+# Usage:
+#   curl -fsSL https://codetrail.dipgle.com/install.txt | bash
+#
+# Requirements: macOS / Linux / WSL2 + Claude Code installed.
+
+set -e
+
+RC="$HOME/.zshrc"
+[ ! -f "$RC" ] && RC="$HOME/.bashrc"
+
+if grep -q "# Codetrail helpers" "$RC" 2>/dev/null; then
+    echo "→ helpers already present in $RC — skipping."
+    echo ""
+    echo "Try: np my-app    (or: cd /path/to/existing && adopt)"
+    exit 0
+fi
+
+cat >> "$RC" <<'EOF'
+
+# Codetrail helpers — auto-installed
+np() {
+  [ -z "$1" ] && { echo "Usage: np <name|path>"; return 1; }
+  local DIR
+  if [[ "$1" == */* ]]; then DIR="$1"
+  else DIR="$HOME/Documents/projects/AI/$1"
+  fi
+  ~/Documents/projects/AI/init-project/startup.sh "$DIR" || return 1
+  cd "$DIR" && claude
+}
+
+adopt() {
+  local DIR="${1:-$(pwd)}"
+  [ ! -d "$DIR" ] && { echo "Not a dir: $DIR"; return 1; }
+  ~/Documents/projects/AI/init-project/startup.sh "$DIR" || return 1
+  echo "Next: cd \"$DIR\" && claude"
+}
+EOF
+
+echo "✓ Installed Codetrail helpers into $RC"
+echo ""
+echo "Next steps:"
+echo "  1. source $RC    (or open a new terminal)"
+echo "  2. np my-app     (creates ~/Documents/projects/AI/my-app/)"
+echo ""
+echo "Docs: https://codetrail.dipgle.com/"
+echo "Source: https://github.com/dipgle/codetrail"
