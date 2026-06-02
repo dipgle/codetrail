@@ -53,6 +53,11 @@ const I18N = {
     "hero.ctaPrimary": "Join the waitlist",
     "hero.ctaSecondary": "See it work →",
     "hero.meta": "Built on tfl5. Open beta soon. Free during beta.",
+    "stat.projects": "projects dogfooding",
+    "stat.events": "events in demo devlog",
+    "stat.overhead": "per artifact write",
+    "stat.upload": "bytes uploaded for viewer",
+    "preview.fullCta": "Open the live viewer →",
 
     "cmp.title": "Why Codetrail",
     "cmp.lede": "Honest table. We track what no other AI-coding tool tracks structurally.",
@@ -183,6 +188,11 @@ const I18N = {
     "hero.ctaPrimary": "Đăng ký sớm",
     "hero.ctaSecondary": "Xem demo →",
     "hero.meta": "Dựng trên tfl5. Mở beta sớm. Miễn phí trong beta.",
+    "stat.projects": "dự án đang dogfood",
+    "stat.events": "events trong demo devlog",
+    "stat.overhead": "mỗi artifact ghi",
+    "stat.upload": "byte upload cho viewer",
+    "preview.fullCta": "Mở viewer thật →",
 
     "cmp.title": "Tại sao chọn Codetrail",
     "cmp.lede": "Bảng so sánh thẳng. Codetrail track cấu trúc mà các tool AI-coding khác không có.",

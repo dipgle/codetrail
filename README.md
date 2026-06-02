@@ -1,5 +1,10 @@
 # Codetrail
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![Live](https://img.shields.io/badge/live-codetrail.dipgle.com-6ee7b7?logo=icloud)](https://codetrail.dipgle.com/)
+[![Status](https://img.shields.io/badge/status-open%20beta-blue)](https://codetrail.dipgle.com/#waitlist)
+[![Stack](https://img.shields.io/badge/stack-Rust%20%2B%20JS%20%2B%20sql.js-orange)](#)
+
 > **Persistent memory for AI coding sessions.** Auto-logging devlog, UC/TC tracking, stale-resume warnings. Stop losing context between Claude Code sessions.
 
 🌐 **Live**: https://codetrail.dipgle.com/

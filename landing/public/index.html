@@ -40,6 +40,41 @@
       </p>
     </section>
 
+    <section class="stats">
+      <div class="stat"><div class="num">7</div><div class="lbl" data-i18n="stat.projects">projects dogfooding</div></div>
+      <div class="stat"><div class="num">54</div><div class="lbl" data-i18n="stat.events">events in demo devlog</div></div>
+      <div class="stat"><div class="num">&lt;5ms</div><div class="lbl" data-i18n="stat.overhead">per artifact write</div></div>
+      <div class="stat"><div class="num">0</div><div class="lbl" data-i18n="stat.upload">bytes uploaded for viewer</div></div>
+    </section>
+
+    <section class="preview">
+      <div class="preview-frame">
+        <div class="preview-chrome">
+          <span class="dot r"></span><span class="dot y"></span><span class="dot g"></span>
+          <span class="preview-url">codetrail.dipgle.com/viewer.html?demo=1</span>
+        </div>
+        <div class="preview-tabs">
+          <span class="ptab active" data-i18n="viewer.tabs.events">Events</span>
+          <span class="ptab" data-i18n="viewer.tabs.ucs">Use cases</span>
+          <span class="ptab" data-i18n="viewer.tabs.tcs">Test cases</span>
+          <span class="ptab" data-i18n="viewer.tabs.runs">Test runs</span>
+        </div>
+        <table class="preview-table">
+          <thead>
+            <tr><th>ID</th><th>TS</th><th>Kind</th><th>Ref</th><th>Content</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>54</td><td>2026-06-02 14:21</td><td><span class="ptag art">artifact</span></td><td>file:crates/server/src/main.rs</td><td>Write: bind /healthz JSON envelope</td></tr>
+            <tr><td>53</td><td>2026-06-02 14:18</td><td><span class="ptag dec">decision</span></td><td>—</td><td>Use rmcp 0.16 (bundled rusqlite, single binary)</td></tr>
+            <tr><td>52</td><td>2026-06-02 14:15</td><td><span class="ptag art">artifact</span></td><td>file:Cargo.toml</td><td>Edit: add chrono + schemars deps</td></tr>
+            <tr><td>51</td><td>2026-06-02 13:58</td><td><span class="ptag run">test_run</span></td><td>TC-007</td><td>RED — getContextBrief returns null on empty DB</td></tr>
+            <tr><td>50</td><td>2026-06-02 13:52</td><td><span class="ptag msg">message</span></td><td>actor:user</td><td>"split scan_health into queryable signals"</td></tr>
+          </tbody>
+        </table>
+        <a class="preview-fade-cta" href="/viewer.html?demo=1" data-i18n="preview.fullCta">Open the live viewer →</a>
+      </div>
+    </section>
+
     <section class="features">
       <article>
         <div class="ico">●</div>
