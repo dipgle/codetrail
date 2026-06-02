@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en" data-lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title data-i18n="viewer.title">Codetrail Viewer — inspect any devlog.sqlite</title>
+  <link rel="stylesheet" href="/styles.css" />
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+</head>
+<body>
+  <header class="site-header">
+    <a class="brand" href="/">
+      <span class="brand-mark">⌁</span>
+      <span>Codetrail</span>
+    </a>
+    <nav>
+      <a href="/#features" data-i18n="nav.features">Features</a>
+      <a href="/viewer.html" data-i18n="nav.viewer">Viewer</a>
+      <a href="/#waitlist" data-i18n="nav.waitlist">Waitlist</a>
+      <button class="lang-toggle" id="langToggle" aria-label="Toggle language">EN / VI</button>
+    </nav>
+  </header>
+
+  <main>
+    <section class="viewer-head">
+      <h1 data-i18n="viewer.h1">Devlog Viewer</h1>
+      <p class="lede" data-i18n="viewer.lede">
+        Drop any <code>devlog.sqlite</code> from a Codetrail project below. Everything runs in your browser — no upload, no server.
+      </p>
+    </section>
+
+    <section class="viewer-drop" id="dropZone">
+      <input type="file" id="fileInput" accept=".sqlite,.db" hidden />
+      <button class="btn primary" id="pickBtn" data-i18n="viewer.pick">Choose a .sqlite file</button>
+      <p class="muted" data-i18n="viewer.hint">…or drag &amp; drop here.</p>
+      <p class="muted small" id="dropStatus" data-i18n="viewer.status">No file loaded.</p>
+    </section>
+
+    <section class="viewer-panels" id="panels" hidden>
+      <nav class="tabs">
+        <button class="tab active" data-tab="events" data-i18n="viewer.tabs.events">Events</button>
+        <button class="tab" data-tab="ucs" data-i18n="viewer.tabs.ucs">Use cases</button>
+        <button class="tab" data-tab="tcs" data-i18n="viewer.tabs.tcs">Test cases</button>
+        <button class="tab" data-tab="runs" data-i18n="viewer.tabs.runs">Test runs</button>
+      </nav>
+      <div class="panel" id="panel-events"></div>
+      <div class="panel" id="panel-ucs" hidden></div>
+      <div class="panel" id="panel-tcs" hidden></div>
+      <div class="panel" id="panel-runs" hidden></div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="cols">
+      <div>
+        <strong>Codetrail</strong>
+        <p data-i18n="foot.tagline">Persistent memory for AI coding sessions.</p>
+      </div>
+      <div>
+        <strong data-i18n="foot.product">Product</strong>
+        <a href="/#features" data-i18n="nav.features">Features</a>
+        <a href="/viewer.html" data-i18n="nav.viewer">Viewer</a>
+        <a href="/#waitlist" data-i18n="nav.waitlist">Waitlist</a>
+      </div>
+      <div>
+        <strong data-i18n="foot.resources">Resources</strong>
+        <a href="https://github.com/dipgle/codetrail#readme" target="_blank" rel="noopener" data-i18n="foot.docs">Docs (soon)</a>
+        <a href="https://github.com/dipgle/codetrail" target="_blank" rel="noopener">GitHub</a>
+      </div>
+      <div>
+        <strong data-i18n="foot.legal">Legal</strong>
+        <a href="/terms.html" data-i18n="foot.terms">Terms</a>
+        <a href="/privacy.html" data-i18n="foot.privacy">Privacy</a>
+      </div>
+    </div>
+    <small data-i18n="foot.credit">© Codetrail — Powered by tfl5</small>
+  </footer>
+  <script src="/script.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sql.js@1.10.3/dist/sql-wasm.js"></script>
+  <script src="/viewer.js"></script>
+</body>
+</html>

@@ -1,0 +1,246 @@
+<!doctype html>
+<html lang="en" data-lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title data-i18n="meta.title">Codetrail — Persistent memory for AI coding sessions</title>
+  <meta name="description" data-i18n-attr="content" data-i18n="meta.desc"
+        content="Auto-logging devlog, UC/TC tracking, stale-resume warnings. Stop losing context between Claude Code sessions." />
+  <link rel="stylesheet" href="/styles.css" />
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+</head>
+<body>
+  <header class="site-header">
+    <a class="brand" href="/">
+      <span class="brand-mark">⌁</span>
+      <span>Codetrail</span>
+    </a>
+    <nav>
+      <a href="/#features" data-i18n="nav.features">Features</a>
+      <a href="/#pricing" data-i18n="nav.pricing">Pricing</a>
+      <a href="/viewer.html" data-i18n="nav.viewer">Viewer</a>
+      <a href="/#waitlist" data-i18n="nav.waitlist">Waitlist</a>
+      <button class="lang-toggle" id="langToggle" aria-label="Toggle language">EN / VI</button>
+    </nav>
+  </header>
+
+  <main>
+    <section class="hero">
+      <h1 data-i18n="hero.title">Your AI coding sessions, remembered.</h1>
+      <p class="lede" data-i18n="hero.lede">
+        Codetrail turns Claude Code into a persistent project partner: every file edit logged automatically,
+        every use case &amp; test case tracked, stale-context warnings on resume. No more confident-wrong narratives.
+      </p>
+      <div class="cta">
+        <a class="btn primary" href="#waitlist" data-i18n="hero.ctaPrimary">Join the waitlist</a>
+        <a class="btn ghost" href="/viewer.html?demo=1" data-i18n="hero.ctaSecondary">See it work →</a>
+      </div>
+      <p class="hero-meta" data-i18n="hero.meta">
+        Built on tfl5. Open beta soon. Free during beta.
+      </p>
+    </section>
+
+    <section class="features">
+      <article>
+        <div class="ico">●</div>
+        <h3 data-i18n="feat.auto.title">Auto-artifact log</h3>
+        <p data-i18n="feat.auto.body">Every Edit/Write becomes an immutable event in <code>logs/devlog.sqlite</code>. Zero manual <code>log_event</code> calls. Two-hook design ships in 5 minutes.</p>
+      </article>
+      <article>
+        <div class="ico">◆</div>
+        <h3 data-i18n="feat.uctc.title">UC / TC tracking, TDD-aligned</h3>
+        <p data-i18n="feat.uctc.body">Use cases and test cases live in the same SQLite next to every event. RED → GREEN runs are recorded, not implied. Session resume reads from data, not vibes.</p>
+      </article>
+      <article>
+        <div class="ico">▲</div>
+        <h3 data-i18n="feat.stale.title">Stale-resume warning</h3>
+        <p data-i18n="feat.stale.body">SessionStart hook compares devlog last-event with file mtime. If code moved without logging, the warning lands directly in the prompt — impossible to miss.</p>
+      </article>
+      <article>
+        <div class="ico">▣</div>
+        <h3 data-i18n="feat.multi.title">Multi-project memory</h3>
+        <p data-i18n="feat.multi.body">5, 20, 50 projects in one workspace? Codetrail walks up from any file to find the right devlog. One brain across all your codebases.</p>
+      </article>
+      <article>
+        <div class="ico">◉</div>
+        <h3 data-i18n="feat.viewer.title">Browser-native viewer</h3>
+        <p data-i18n="feat.viewer.body">Drag any <code>devlog.sqlite</code> into the viewer — events, UCs, TCs, test runs render instantly. Pure WASM, your data never leaves the browser.</p>
+      </article>
+      <article>
+        <div class="ico">◈</div>
+        <h3 data-i18n="feat.local.title">Local-first, sync optional</h3>
+        <p data-i18n="feat.local.body">SQLite stays on your disk, alongside the code. Cloud dashboard (P2) syncs on your terms. Privacy by default; collab when you want.</p>
+      </article>
+    </section>
+
+    <section class="compare">
+      <h2 data-i18n="cmp.title">Why Codetrail</h2>
+      <p class="lede" data-i18n="cmp.lede">Honest table. We track what no other AI-coding tool tracks structurally.</p>
+      <div class="cmp-wrap">
+        <table class="cmp">
+          <thead>
+            <tr>
+              <th></th>
+              <th class="us"><strong>Codetrail</strong></th>
+              <th data-i18n="cmp.col.cc">Claude Code</th>
+              <th data-i18n="cmp.col.aider">Aider</th>
+              <th data-i18n="cmp.col.cursor">Cursor</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td data-i18n="cmp.row.devlog">Structured project devlog (events / decisions)</td>
+              <td class="us">●</td><td>—</td><td data-i18n="cmp.git">git only</td><td>—</td>
+            </tr>
+            <tr>
+              <td data-i18n="cmp.row.uctc">UC / TC + test_runs tracked separately</td>
+              <td class="us">●</td><td>—</td><td>—</td><td>—</td>
+            </tr>
+            <tr>
+              <td data-i18n="cmp.row.multi">Multi-project memory across N codebases</td>
+              <td class="us">●</td><td data-i18n="cmp.partial">partial (chat memory)</td><td data-i18n="cmp.perrepo">per-repo</td><td data-i18n="cmp.sess">per IDE session</td>
+            </tr>
+            <tr>
+              <td data-i18n="cmp.row.auto">Auto-log every artifact without code calls</td>
+              <td class="us">●</td><td data-i18n="cmp.discipline">discipline-based</td><td data-i18n="cmp.inherent">inherent</td><td>—</td>
+            </tr>
+            <tr>
+              <td data-i18n="cmp.row.viewer">Browser-native viewer for any team member</td>
+              <td class="us">●</td><td>—</td><td data-i18n="cmp.terminal">terminal log</td><td>—</td>
+            </tr>
+            <tr>
+              <td data-i18n="cmp.row.stale">Stale-resume warning at session start</td>
+              <td class="us">●</td><td>—</td><td>—</td><td>—</td>
+            </tr>
+            <tr>
+              <td data-i18n="cmp.row.local">Local-first; cloud is opt-in</td>
+              <td class="us">●</td><td data-i18n="cmp.hybrid">hybrid</td><td class="us">●</td><td data-i18n="cmp.cloud">cloud-only</td>
+            </tr>
+            <tr>
+              <td data-i18n="cmp.row.setup">Setup time</td>
+              <td class="us" data-i18n="cmp.setup.us">~30s (np my-app)</td>
+              <td data-i18n="cmp.setup.cc">~5min</td>
+              <td data-i18n="cmp.setup.aider">~1min</td>
+              <td data-i18n="cmp.setup.cursor">~10min IDE config</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="cmp-note" data-i18n="cmp.note">Spotted something off? <a href="mailto:hello@codetrail.dipgle.com">Tell us</a> — we update this table when we're wrong.</p>
+    </section>
+
+    <section class="how">
+      <h2 data-i18n="how.title">How it works</h2>
+      <ol class="steps">
+        <li>
+          <strong data-i18n="how.s1t">Install</strong>
+          <p data-i18n="how.s1b">One bash helper: <code>np my-app</code> scaffolds CLAUDE.md, docs/, memory/, logs/devlog.sqlite, MCP server. Or <code>adopt</code> an existing project in place.</p>
+        </li>
+        <li>
+          <strong data-i18n="how.s2t">Work normally</strong>
+          <p data-i18n="how.s2b">Open Claude Code. Auto-hooks log every artifact. The MCP server tracks UCs/TCs/test runs as you build. Nothing extra to remember.</p>
+        </li>
+        <li>
+          <strong data-i18n="how.s3t">Resume any time</strong>
+          <p data-i18n="how.s3b">Days, weeks, multiple agents later — Codetrail surfaces the right context. The narrative comes from data, not stale notes.</p>
+        </li>
+      </ol>
+    </section>
+
+    <section class="pricing" id="pricing">
+      <h2 data-i18n="price.title">Pricing</h2>
+      <p class="lede" data-i18n="price.lede">Free forever for solo work. Pay only when you sync across machines or share with a team.</p>
+      <div class="price-grid">
+        <article class="price-card">
+          <header>
+            <h3 data-i18n="price.free.name">Free</h3>
+            <div class="price"><span class="amount" data-i18n="price.free.amount">$0</span><span class="period" data-i18n="price.free.period">forever</span></div>
+            <p class="price-tag" data-i18n="price.free.tag">Solo dev, local-only</p>
+          </header>
+          <ul>
+            <li data-i18n="price.free.f1">Unlimited projects, local devlog</li>
+            <li data-i18n="price.free.f2">Auto-artifact hook + stale-resume warning</li>
+            <li data-i18n="price.free.f3">Browser viewer (drag-drop)</li>
+            <li data-i18n="price.free.f4">UC / TC / test_run tracking</li>
+            <li data-i18n="price.free.f5">Community support</li>
+          </ul>
+          <a class="btn ghost" href="#waitlist" data-i18n="price.free.cta">Get started</a>
+        </article>
+
+        <article class="price-card featured">
+          <div class="badge" data-i18n="price.pro.badge">Most popular</div>
+          <header>
+            <h3 data-i18n="price.pro.name">Pro</h3>
+            <div class="price"><span class="amount" data-i18n="price.pro.amount">$9</span><span class="period" data-i18n="price.pro.period">/ month</span></div>
+            <p class="price-tag" data-i18n="price.pro.tag">Sync across your machines</p>
+          </header>
+          <ul>
+            <li data-i18n="price.pro.f1"><strong>Everything in Free</strong>, plus:</li>
+            <li data-i18n="price.pro.f2">Cloud sync — 1 user, unlimited devices</li>
+            <li data-i18n="price.pro.f3">Cross-project search across all your devlogs</li>
+            <li data-i18n="price.pro.f4">Web dashboard (no upload needed)</li>
+            <li data-i18n="price.pro.f5">90-day history retention</li>
+            <li data-i18n="price.pro.f6">Priority email support</li>
+          </ul>
+          <a class="btn primary" href="#waitlist" data-i18n="price.pro.cta">Start Pro trial</a>
+        </article>
+
+        <article class="price-card">
+          <header>
+            <h3 data-i18n="price.team.name">Team</h3>
+            <div class="price"><span class="amount" data-i18n="price.team.amount">$29</span><span class="period" data-i18n="price.team.period">/ user / month</span></div>
+            <p class="price-tag" data-i18n="price.team.tag">Share AI memory across the team</p>
+          </header>
+          <ul>
+            <li data-i18n="price.team.f1"><strong>Everything in Pro</strong>, plus:</li>
+            <li data-i18n="price.team.f2">Multi-user with role-based access</li>
+            <li data-i18n="price.team.f3">Read-only share links (per project)</li>
+            <li data-i18n="price.team.f4">Audit log + SSO (SAML, OIDC)</li>
+            <li data-i18n="price.team.f5">1-year history retention</li>
+            <li data-i18n="price.team.f6">Slack + onboarding session</li>
+          </ul>
+          <a class="btn ghost" href="#waitlist" data-i18n="price.team.cta">Talk to us</a>
+        </article>
+      </div>
+      <p class="price-note" data-i18n="price.note">All paid plans start with a 14-day no-card trial. Annual billing saves 20%. Educational / open-source projects: Pro free — just email us.</p>
+    </section>
+
+    <section class="waitlist" id="waitlist">
+      <h2 data-i18n="wait.title">Get early access</h2>
+      <p data-i18n="wait.lede">We're opening the beta to a small batch of Claude Code power users first. Drop your email and we'll send the install link.</p>
+      <form class="wait-form" id="waitForm" method="POST" action="mailto:hello@codetrail.dipgle.com" enctype="text/plain">
+        <input type="email" name="email" required placeholder="you@example.com" data-i18n-attr="placeholder" data-i18n="wait.placeholder" />
+        <button type="submit" class="btn primary" data-i18n="wait.submit">Notify me</button>
+      </form>
+      <p class="wait-meta" data-i18n="wait.meta">No spam. One email when access opens. You can leave anytime.</p>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="cols">
+      <div>
+        <strong>Codetrail</strong>
+        <p data-i18n="foot.tagline">Persistent memory for AI coding sessions.</p>
+      </div>
+      <div>
+        <strong data-i18n="foot.product">Product</strong>
+        <a href="/#features" data-i18n="nav.features">Features</a>
+        <a href="/viewer.html" data-i18n="nav.viewer">Viewer</a>
+        <a href="/#waitlist" data-i18n="nav.waitlist">Waitlist</a>
+      </div>
+      <div>
+        <strong data-i18n="foot.resources">Resources</strong>
+        <a href="https://github.com/dipgle/codetrail#readme" target="_blank" rel="noopener" data-i18n="foot.docs">Docs (soon)</a>
+        <a href="https://github.com/dipgle/codetrail" target="_blank" rel="noopener">GitHub</a>
+      </div>
+      <div>
+        <strong data-i18n="foot.legal">Legal</strong>
+        <a href="/terms.html" data-i18n="foot.terms">Terms</a>
+        <a href="/privacy.html" data-i18n="foot.privacy">Privacy</a>
+      </div>
+    </div>
+    <small data-i18n="foot.credit">© Codetrail — Powered by tfl5</small>
+  </footer>
+  <script src="/script.js"></script>
+</body>
+</html>
