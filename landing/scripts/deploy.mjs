@@ -174,6 +174,7 @@ async function main() {
 
   // 3. upload files
   const files = walk(APP_DIR);
+  const failures = [];
   console.log(`→ uploading ${files.length} files to stage=${STAGE}…`);
   if (DRY_RUN) {
     for (const f of files) console.log(`  (dry) ${relative(APP_DIR, f)}`);
@@ -192,7 +193,9 @@ async function main() {
         console.log(`  ✓ ${rel}  (${buf.length} B, ${id ?? "?"})`);
       } catch (e) {
         console.error(`  ✗ ${rel}  ${e.message}`);
-        throw e;
+        // Continue-on-error: a single rejected file shouldn't abort the
+        // whole deploy. We log + count failures and report at end.
+        failures.push({ path: rel, err: e.message });
       }
     }
   }
@@ -230,7 +233,12 @@ async function main() {
   }
 
   console.log("");
-  console.log("✓ DEPLOY COMPLETE");
+  if (failures.length === 0) {
+    console.log("✓ DEPLOY COMPLETE");
+  } else {
+    console.log(`⚠ DEPLOY COMPLETE WITH ${failures.length} FAILURE(S):`);
+    for (const f of failures) console.log(`  - ${f.path}: ${f.err}`);
+  }
   console.log(`  app_tid : ${APP_TID}`);
   if (APP_DOMAIN) console.log(`  url     : https://${APP_DOMAIN}/`);
 }
