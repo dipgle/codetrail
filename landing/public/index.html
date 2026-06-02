@@ -5,14 +5,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title data-i18n="meta.title">Codetrail — Persistent memory for AI coding sessions</title>
   <meta name="description" data-i18n-attr="content" data-i18n="meta.desc"
-        content="Auto-logging devlog, UC/TC tracking, stale-resume warnings. Stop losing context between Claude Code sessions." />
+        content="Codetrail gives Claude Code persistent memory across sessions: auto-logging devlog, UC/TC tracking, stale-resume warnings. Never re-explain your project to the AI again." />
   <link rel="stylesheet" href="/styles.css" />
   <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
 </head>
 <body>
   <header class="site-header">
     <a class="brand" href="/">
-      <span class="brand-mark">⌁</span>
+      <span class="brand-mark" aria-hidden="true">⌁</span>
       <span>Codetrail</span>
     </a>
     <nav>
@@ -26,7 +26,7 @@
 
   <main>
     <section class="hero">
-      <h1 data-i18n="hero.title">Your AI coding sessions, remembered.</h1>
+      <h1 data-i18n="hero.title">Stop re-explaining your project to the AI.</h1>
       <p class="lede" data-i18n="hero.lede">
         Codetrail turns Claude Code into a persistent project partner: every file edit logged automatically,
         every use case &amp; test case tracked, stale-context warnings on resume. No more confident-wrong narratives.
@@ -50,7 +50,7 @@
     <section class="preview">
       <div class="preview-frame">
         <div class="preview-chrome">
-          <span class="dot r"></span><span class="dot y"></span><span class="dot g"></span>
+          <span class="dot r" aria-hidden="true"></span><span class="dot y" aria-hidden="true"></span><span class="dot g" aria-hidden="true"></span>
           <span class="preview-url">codetrail.dipgle.com/viewer.html?demo=1</span>
         </div>
         <div class="preview-tabs">
@@ -77,32 +77,32 @@
 
     <section class="features">
       <article>
-        <div class="ico">●</div>
+        <div class="ico" aria-hidden="true">●</div>
         <h3 data-i18n="feat.auto.title">Auto-artifact log</h3>
         <p data-i18n="feat.auto.body">Every Edit/Write becomes an immutable event in <code>logs/devlog.sqlite</code>. Zero manual <code>log_event</code> calls. Two-hook design ships in 5 minutes.</p>
       </article>
       <article>
-        <div class="ico">◆</div>
+        <div class="ico" aria-hidden="true">◆</div>
         <h3 data-i18n="feat.uctc.title">UC / TC tracking, TDD-aligned</h3>
         <p data-i18n="feat.uctc.body">Use cases and test cases live in the same SQLite next to every event. RED → GREEN runs are recorded, not implied. Session resume reads from data, not vibes.</p>
       </article>
       <article>
-        <div class="ico">▲</div>
+        <div class="ico" aria-hidden="true">▲</div>
         <h3 data-i18n="feat.stale.title">Stale-resume warning</h3>
         <p data-i18n="feat.stale.body">SessionStart hook compares devlog last-event with file mtime. If code moved without logging, the warning lands directly in the prompt — impossible to miss.</p>
       </article>
       <article>
-        <div class="ico">▣</div>
+        <div class="ico" aria-hidden="true">▣</div>
         <h3 data-i18n="feat.multi.title">Multi-project memory</h3>
         <p data-i18n="feat.multi.body">5, 20, 50 projects in one workspace? Codetrail walks up from any file to find the right devlog. One brain across all your codebases.</p>
       </article>
       <article>
-        <div class="ico">◉</div>
+        <div class="ico" aria-hidden="true">◉</div>
         <h3 data-i18n="feat.viewer.title">Browser-native viewer</h3>
         <p data-i18n="feat.viewer.body">Drag any <code>devlog.sqlite</code> into the viewer — events, UCs, TCs, test runs render instantly. Pure WASM, your data never leaves the browser.</p>
       </article>
       <article>
-        <div class="ico">◈</div>
+        <div class="ico" aria-hidden="true">◈</div>
         <h3 data-i18n="feat.local.title">Local-first, sync optional</h3>
         <p data-i18n="feat.local.body">SQLite stays on your disk, alongside the code. Cloud dashboard (P2) syncs on your terms. Privacy by default; collab when you want.</p>
       </article>

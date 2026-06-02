@@ -3,8 +3,8 @@
 
 const I18N = {
   en: {
-    "meta.title": "Codetrail — Persistent memory for AI coding sessions",
-    "meta.desc": "Auto-logging devlog, UC/TC tracking, stale-resume warnings. Stop losing context between Claude Code sessions.",
+    "meta.title": "Codetrail — Persistent memory for Claude Code, Cursor, Aider sessions",
+    "meta.desc": "Codetrail gives Claude Code persistent memory across sessions: auto-logging devlog, UC/TC tracking, stale-resume warnings. Never re-explain your project to the AI again.",
 
     "nav.features": "Features",
     "nav.pricing": "Pricing",
@@ -48,7 +48,7 @@ const I18N = {
     "price.team.cta": "Talk to us",
     "price.note": "All paid plans start with a 14-day no-card trial. Annual billing saves 20%. Educational / open-source projects: Pro free — just email us.",
 
-    "hero.title": "Your AI coding sessions, remembered.",
+    "hero.title": "Stop re-explaining your project to the AI.",
     "hero.lede": "Codetrail turns Claude Code into a persistent project partner: every file edit logged automatically, every use case & test case tracked, stale-context warnings on resume. No more confident-wrong narratives.",
     "hero.ctaPrimary": "Join the waitlist",
     "hero.ctaSecondary": "See it work →",
@@ -138,8 +138,8 @@ const I18N = {
     "viewer.parseErr": "Could not parse file. Is this a Codetrail devlog.sqlite?",
   },
   vi: {
-    "meta.title": "Codetrail — Bộ nhớ bền vững cho session AI",
-    "meta.desc": "Tự động log devlog, theo dõi UC/TC, cảnh báo session cũ. Đừng mất context giữa các phiên Claude Code nữa.",
+    "meta.title": "Codetrail — Bộ nhớ bền vững cho Claude Code, Cursor, Aider",
+    "meta.desc": "Codetrail cho Claude Code memory bền vững giữa các phiên: tự động log devlog, theo dõi UC/TC, cảnh báo session cũ. Đừng giải thích lại dự án cho AI mỗi lần.",
 
     "nav.features": "Tính năng",
     "nav.pricing": "Giá",
@@ -183,7 +183,7 @@ const I18N = {
     "price.team.cta": "Liên hệ",
     "price.note": "Mọi gói paid có 14 ngày dùng thử không cần card. Trả năm tiết kiệm 20%. Dự án giáo dục / open source: Pro miễn phí — gửi email cho chúng tôi.",
 
-    "hero.title": "Mọi session AI của bạn, đều được nhớ.",
+    "hero.title": "Đừng giải thích lại dự án cho AI mỗi lần.",
     "hero.lede": "Codetrail biến Claude Code thành đối tác dự án bền vững: mọi edit tự động log, mọi use case & test case được theo dõi, cảnh báo context cũ khi resume. Không còn câu chuyện tự tin sai nữa.",
     "hero.ctaPrimary": "Đăng ký sớm",
     "hero.ctaSecondary": "Xem demo →",
