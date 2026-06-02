@@ -75,7 +75,7 @@ No DB. No migrations. No state. Pure static + Tera includes.
 
 ## Waitlist (P0 stub → P1 real)
 
-Current form posts via `mailto:hello@codetrail.dipgle.com` AND stores to
+Current form posts via `mailto:trace.codetrail@gmail.com` AND stores to
 `localStorage` for a snapshot. Replace `<form action>` and the JS handler
 in `public/script.js#initWaitlist` once a real endpoint exists.
 

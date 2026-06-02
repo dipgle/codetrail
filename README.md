@@ -81,5 +81,5 @@ MIT for everything in this repo. Binary download has its own EULA (free Beta usa
 ## Contact
 
 - Twitter: TBD
-- Email: hello@codetrail.dipgle.com
+- Email: trace.codetrail@gmail.com
 - Issues: this repo
