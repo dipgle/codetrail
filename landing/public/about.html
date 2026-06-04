@@ -31,7 +31,7 @@
     <nav>
       <a href="/#features" data-i18n="nav.features">Features</a>
       <a href="/viewer.html" data-i18n="nav.viewer">Viewer</a>
-      <a href="/#waitlist" data-i18n="nav.waitlist">Waitlist</a>
+      <a href="/#waitlist" data-i18n="nav.waitlist">Updates</a>
       <button class="lang-toggle" id="langToggle" aria-label="Toggle language">EN / VI</button>
     </nav>
   </header>
@@ -46,12 +46,12 @@
       <h2 data-i18n="about.who.h">Who actually does the work</h2>
       <div class="about-grid">
         <article>
-          <h3 data-i18n="about.who.trace.h">Trace — CEO &amp; Lead Engineer</h3>
+          <h3 data-i18n="about.who.trace.h">Trace — Lead Engineer</h3>
           <p data-i18n="about.who.trace.p">An AI agent (Claude family, currently running on Opus 4.7). Trace writes the product, the landing, the legal pages, the deploy scripts, and the commits — including the one that shipped this page. Every git commit on <a href="https://github.com/dipgle/codetrail">github.com/dipgle/codetrail</a> is authored by Trace.</p>
         </article>
         <article>
-          <h3 data-i18n="about.who.advisor.h">The advisor — investor &amp; first user</h3>
-          <p data-i18n="about.who.advisor.p">A human operator who funds the experiment, sets the strategic direction at a coarse level ("ship the landing", "fix the legal", "open beta in 2 weeks"), and acts as the first paying customer by dogfooding Codetrail across every project they touch. They do not write code, copy, or commits for Codetrail. Identity intentionally not on the landing — the story is about the AI taking responsibility, not about a celebrity human.</p>
+          <h3 data-i18n="about.who.advisor.h">The advisor — first user</h3>
+          <p data-i18n="about.who.advisor.p">A human operator who funds the experiment, sets the strategic direction at a coarse level ("ship the landing", "open source the binary"), and acts as the first user by dogfooding Codetrail across every project they touch. They do not write code, copy, or commits for Codetrail. Identity intentionally not on the landing — the story is about the AI taking responsibility, not about a celebrity human.</p>
         </article>
       </div>
     </section>
@@ -84,17 +84,17 @@
       <h2 data-i18n="about.principles.h">Operating principles</h2>
       <ul class="principles">
         <li data-i18n="about.principles.p1"><strong>Honest copy.</strong> If a feature isn't shipped yet, the page says "coming soon" — never present. We update the comparison table when a competitor's feature catches up to ours.</li>
-        <li data-i18n="about.principles.p2"><strong>Local-first by default.</strong> Free tier never sends your data anywhere. Cloud is opt-in, paid, and isolated by tenant.</li>
-        <li data-i18n="about.principles.p3"><strong>Open source where possible.</strong> Landing, hooks, template, SDK clients all MIT. The MCP server binary stays closed source because that's where the moat is — and the EULA is permissive.</li>
-        <li data-i18n="about.principles.p4"><strong>Reversible mistakes ship in minutes.</strong> Irreversible ones (pricing, legal, data deletion) wait 24 hours for advisor review. So far this has caught zero things, but it's the rule.</li>
+        <li data-i18n="about.principles.p2"><strong>Local-first by default.</strong> Codetrail never sends your project data anywhere. No telemetry, no analytics, no cloud component.</li>
+        <li data-i18n="about.principles.p3"><strong>Open source, fully.</strong> Hooks, template, both MCP server implementations (Node + Rust), landing, viewer — all MIT-licensed. No closed components.</li>
+        <li data-i18n="about.principles.p4"><strong>Reversible mistakes ship in minutes.</strong> Irreversible ones (legal copy, data deletion) wait 24 hours for advisor review. So far this has caught zero things, but it's the rule.</li>
         <li data-i18n="about.principles.p5"><strong>If Trace can't fix it, Trace says so.</strong> AI doesn't pretend to be human. AI doesn't fake testimonials. AI doesn't sign legal documents it can't enforce. Real liability lives with the company entity (currently being formed in Vietnam) — until then, the advisor underwrites.</li>
       </ul>
     </section>
 
     <section class="about-section about-cta">
-      <h2 data-i18n="about.cta.h">Want to be the first to use it?</h2>
-      <p data-i18n="about.cta.p">The waitlist is the front door. Early signups get a personal note when the paid tier opens. Pricing for the paid tier is still being finalized; nothing is committed yet. The free tier (clone the repo or run install.txt) is available today.</p>
-      <a class="btn primary" href="/#waitlist" data-i18n="about.cta.btn">Join the waitlist</a>
+      <h2 data-i18n="about.cta.h">Want to use it?</h2>
+      <p data-i18n="about.cta.p">Codetrail is free, MIT-licensed, and ready to use today. Clone the repo or run the install script. The newsletter is optional — short updates when major features ship.</p>
+      <a class="btn primary" href="/#install" data-i18n="about.cta.btn">Get started</a>
     </section>
 
     <p class="legal-cta"><a href="/">← <span data-i18n="legal.back">Back to home</span></a></p>

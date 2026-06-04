@@ -30,60 +30,55 @@
     <nav>
       <a href="/#features" data-i18n="nav.features">Features</a>
       <a href="/viewer.html" data-i18n="nav.viewer">Viewer</a>
-      <a href="/#waitlist" data-i18n="nav.waitlist">Waitlist</a>
+      <a href="/#waitlist" data-i18n="nav.waitlist">Updates</a>
       <button class="lang-toggle" id="langToggle" aria-label="Toggle language">EN / VI</button>
     </nav>
   </header>
 
   <main class="legal">
     <h1 data-i18n="priv.h1">Privacy Policy</h1>
-    <p class="muted" data-i18n="priv.updated">Last updated: 2026-06-03</p>
+    <p class="muted" data-i18n="priv.updated">Last updated: 2026-06-04</p>
     <p class="legal-intro" data-i18n="priv.intro">We hate dark patterns and we hate boilerplate. This page tells you exactly what we know about you, what we do with it, and what you can ask us to stop. Where we say "we", we mean Codetrail (operated by Trace, contact at <a href="mailto:codetrail@dipgle.com">codetrail@dipgle.com</a>).</p>
 
     <h2 data-i18n="priv.s1">1. Local-first by default</h2>
-    <p data-i18n="priv.s1p">If you only use the free tier of Codetrail (hooks, template, browser viewer), <strong>no data leaves your machine, ever</strong>. The viewer parses SQLite files entirely in your browser via WASM — there is no upload, no server round-trip. We literally cannot see your devlog.</p>
+    <p data-i18n="priv.s1p">Codetrail itself (hooks, template, MCP server, browser viewer) never sends your data anywhere. The viewer parses SQLite files entirely in your browser via WASM. We literally cannot see your devlog — <strong>there is no cloud component</strong>.</p>
 
-    <h2 data-i18n="priv.s2">2. What we collect on this website</h2>
+    <h2 data-i18n="priv.s2">2. What this website collects</h2>
     <ul>
-      <li data-i18n="priv.s2l1">Email addresses you submit via the waitlist form, used only to email you when the paid tier opens. Stored until you ask us to delete or the invite has been delivered + 90 days.</li>
+      <li data-i18n="priv.s2l1">Email addresses you submit via the newsletter form, used only to send occasional product updates and major release news. Stored until you unsubscribe (one-click in every email).</li>
       <li data-i18n="priv.s2l2">Standard server logs (IP, user agent, requested path) retained 30 days for abuse prevention. Not used for advertising or product analytics.</li>
       <li data-i18n="priv.s2l3">No third-party analytics or trackers (no Google Analytics, no Facebook pixel, no fingerprinting).</li>
     </ul>
 
-    <h2 data-i18n="priv.s3">3. Paid tiers (Pro, Team)</h2>
-    <p data-i18n="priv.s3p">When you sync devlogs to the cloud (Pro/Team feature), we store the SQLite contents encrypted at rest, scoped to your account. We never train models on your devlog, never share with third parties, never look at it except when you grant explicit support access. Retention: live for as long as your account is active; deleted within 30 days of account closure or explicit delete request.</p>
-
-    <h2 data-i18n="priv.s4">4. Sub-processors</h2>
-    <p data-i18n="priv.s4p">We use a small number of vendors to operate Codetrail. Each has signed a Data Processing Agreement and is bound by GDPR-equivalent terms. Current list:</p>
+    <h2 data-i18n="priv.s3">3. Sub-processors</h2>
+    <p data-i18n="priv.s3p">We use a small number of vendors to operate the landing site only. None of them have access to your devlog or project data (there is no cloud component to access):</p>
     <ul>
-      <li data-i18n="priv.s4l1"><strong>tfl5</strong> (Hanoi, Vietnam) — hosting + database + storage for the cloud sync feature.</li>
-      <li data-i18n="priv.s4l2"><strong>Stripe</strong> (USA / Ireland) — credit-card and international payments. We never see your card details.</li>
-      <li data-i18n="priv.s4l3"><strong>VietQR / MoMo / domestic banks</strong> (Vietnam) — Vietnamese-currency payments. Same isolation.</li>
-      <li data-i18n="priv.s4l4"><strong>Google Workspace</strong> (USA / EU) — operational email (the mailbox you write to). Subject to Google's standard contractual clauses.</li>
-      <li data-i18n="priv.s4l5"><strong>jsDelivr CDN</strong> (Fastly / Cloudflare edge) — serves the public <code>sql.js</code> WebAssembly bundle to the browser viewer. Your IP and User-Agent reach the CDN for the asset request only; the SQLite file you drop in stays in your browser and is never sent anywhere.</li>
+      <li data-i18n="priv.s3l1"><strong>tfl5</strong> (Hanoi, Vietnam) — hosts this static landing site at codetrail.dipgle.com.</li>
+      <li data-i18n="priv.s3l2"><strong>Google Workspace</strong> (USA / EU) — operational email (the mailbox you write to). Subject to Google's standard contractual clauses.</li>
+      <li data-i18n="priv.s3l3"><strong>jsDelivr CDN</strong> (Fastly / Cloudflare edge) — serves the public <code>sql.js</code> WebAssembly bundle to the browser viewer. Your IP and User-Agent reach the CDN for the asset request only; the SQLite file you drop in stays in your browser and is never sent anywhere.</li>
     </ul>
-    <p data-i18n="priv.s4ps">We will update this list before adding a new sub-processor that handles personal data, with reasonable advance notice (target: 30 days where feasible). You can object by email; if we can't accommodate, you can cancel your plan and we'll refund any unused prepaid period.</p>
+    <p data-i18n="priv.s3ps">We will update this list before adding a new sub-processor that handles personal data, with reasonable advance notice (target: 30 days where feasible). You can object by email.</p>
 
-    <h2 data-i18n="priv.s5">5. Security</h2>
-    <p data-i18n="priv.s5p">Cloud-synced data is encrypted at rest (AES-256, vendor-managed keys) and in transit (TLS 1.2+). Production access requires SSO + hardware key. Internal access to live data is restricted, logged, and used only for the support case you explicitly opened. We perform security review on dependencies before major releases. We're not SOC 2 certified yet — it's on the Team-tier roadmap.</p>
+    <h2 data-i18n="priv.s4">4. Security</h2>
+    <p data-i18n="priv.s4p">The landing site is served over TLS 1.2+. We perform security review on dependencies before major releases. Because Codetrail itself has no cloud component, no customer devlog or project data ever leaves your machine — there is no server-side encryption story to manage.</p>
 
-    <h2 data-i18n="priv.s6">6. International data transfers</h2>
-    <p data-i18n="priv.s6p">Codetrail's primary hosting is in Vietnam. If you are in the EU/EEA, UK, or another jurisdiction that restricts international transfers, we rely on the European Commission's Standard Contractual Clauses (2021/914) and, where required, supplementary measures. Email us for the full transfer impact assessment.</p>
+    <h2 data-i18n="priv.s5">5. International data transfers</h2>
+    <p data-i18n="priv.s5p">Landing site hosting is in Vietnam. If you are in the EU/EEA, UK, or another jurisdiction that restricts international transfers, we rely on the European Commission's Standard Contractual Clauses (2021/914) and, where required, supplementary measures. Email us for the full transfer impact assessment.</p>
 
-    <h2 data-i18n="priv.s7">7. Children's privacy</h2>
-    <p data-i18n="priv.s7p">Codetrail is not intended for users under 16. We do not knowingly collect personal data from anyone under 16. If you believe a minor has provided us data, email us and we will delete it.</p>
+    <h2 data-i18n="priv.s6">6. Children's privacy</h2>
+    <p data-i18n="priv.s6p">Codetrail is not intended for users under 16. We do not knowingly collect personal data from anyone under 16. If you believe a minor has provided us data, email us and we will delete it.</p>
 
-    <h2 data-i18n="priv.s8">8. Data breach notification</h2>
-    <p data-i18n="priv.s8p">If we discover a breach affecting your personal data, we will notify you and the relevant supervisory authority within 72 hours of discovery, per GDPR Art. 33–34. The notification will describe what happened, what data was affected, the likely consequences, and what we're doing about it.</p>
+    <h2 data-i18n="priv.s7">7. Data breach notification</h2>
+    <p data-i18n="priv.s7p">If we discover a breach affecting your personal data (i.e., the newsletter email list), we will notify you and the relevant supervisory authority within 72 hours of discovery, per GDPR Art. 33–34. The notification will describe what happened, what data was affected, the likely consequences, and what we're doing about it.</p>
 
-    <h2 data-i18n="priv.s9">9. Cookies</h2>
-    <p data-i18n="priv.s9p">A single session cookie when you log in (Pro/Team). No tracking cookies. No advertising cookies. No "we use cookies, click OK" theater.</p>
+    <h2 data-i18n="priv.s8">8. Cookies</h2>
+    <p data-i18n="priv.s8p">No cookies. There is no login, so no session cookie either. We do not use tracking or advertising cookies.</p>
 
-    <h2 data-i18n="priv.s10">10. Your rights (GDPR / CCPA / Vietnamese PDPL)</h2>
-    <p data-i18n="priv.s10p">Our lawful basis for processing your email (waitlist) is your <strong>consent</strong> (GDPR Art. 6(1)(a)); for paid-tier syncs it is <strong>contract performance</strong> (Art. 6(1)(b)); for security logs it is <strong>legitimate interest</strong> (Art. 6(1)(f)). You have the right to: <strong>access</strong> a copy of your data, <strong>rectify</strong> it, <strong>erase</strong> it, <strong>restrict</strong> processing, <strong>port</strong> it elsewhere, and <strong>object</strong>. CCPA users additionally have the right to opt out of any sale or share (we do neither). Email <a href="mailto:codetrail@dipgle.com">codetrail@dipgle.com</a> and we will respond as soon as we reasonably can, and at the latest within the period required by applicable law. You may also lodge a complaint with your local data protection authority (in Vietnam: the Ministry of Public Security under Decree 13/2023/NĐ-CP).</p>
+    <h2 data-i18n="priv.s9">9. Your rights (GDPR / CCPA / Vietnamese PDPL)</h2>
+    <p data-i18n="priv.s9p">Our lawful basis for processing your email (newsletter) is your <strong>consent</strong> (GDPR Art. 6(1)(a)); for security logs it is <strong>legitimate interest</strong> (Art. 6(1)(f)). You have the right to: <strong>access</strong> a copy of your data, <strong>rectify</strong> it, <strong>erase</strong> it, <strong>restrict</strong> processing, <strong>port</strong> it elsewhere, and <strong>object</strong>. CCPA users additionally have the right to opt out of any sale or share (we do neither). Email <a href="mailto:codetrail@dipgle.com">codetrail@dipgle.com</a> and we will respond as soon as we reasonably can, and at the latest within the period required by applicable law. You may also lodge a complaint with your local data protection authority (in Vietnam: the Ministry of Public Security under Decree 13/2023/NĐ-CP).</p>
 
-    <h2 data-i18n="priv.s11">11. Changes to this policy</h2>
-    <p data-i18n="priv.s11p">Material changes get 30 days' email notice. The current version date is at the top.</p>
+    <h2 data-i18n="priv.s10">10. Changes to this policy</h2>
+    <p data-i18n="priv.s10p">Material changes get 30 days' email notice (for newsletter subscribers) and a changelog entry. The current version date is at the top.</p>
 
     <p class="legal-cta"><a href="/">← <span data-i18n="legal.back">Back to home</span></a></p>
   </main>

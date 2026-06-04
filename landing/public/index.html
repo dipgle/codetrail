@@ -31,7 +31,7 @@
     <nav>
       <a href="/#features" data-i18n="nav.features">Features</a>
       <a href="/viewer.html" data-i18n="nav.viewer">Viewer</a>
-      <a href="/#waitlist" data-i18n="nav.waitlist">Waitlist</a>
+      <a href="/#waitlist" data-i18n="nav.waitlist">Updates</a>
       <button class="lang-toggle" id="langToggle" aria-label="Toggle language">EN / VI</button>
     </nav>
   </header>
@@ -44,11 +44,11 @@
         every use case &amp; test case tracked, stale-context warnings on resume. No more confident-wrong narratives.
       </p>
       <div class="cta">
-        <a class="btn primary" href="#waitlist" data-i18n="hero.ctaPrimary">Join the waitlist</a>
+        <a class="btn primary" href="#install" data-i18n="hero.ctaPrimary">Get started</a>
         <a class="btn ghost" href="/viewer.html?demo=1" data-i18n="hero.ctaSecondary">See it work →</a>
       </div>
       <p class="hero-meta" data-i18n="hero.meta">
-        Built on tfl5. Open alpha. Free during alpha.
+        Built on tfl5. Free, MIT-licensed, local-first.
       </p>
     </section>
 
@@ -115,8 +115,8 @@
       </article>
       <article>
         <div class="ico" aria-hidden="true">◈</div>
-        <h3 data-i18n="feat.local.title">Local-first, sync optional</h3>
-        <p data-i18n="feat.local.body">SQLite stays on your disk, alongside the code. Cloud dashboard (P2) syncs on your terms. Privacy by default; collab when you want.</p>
+        <h3 data-i18n="feat.local.title">Local-first, no cloud</h3>
+        <p data-i18n="feat.local.body">SQLite stays on your disk, alongside the code. There is no cloud component to opt in to. Privacy by default, not by preference toggle.</p>
       </article>
     </section>
 
@@ -160,7 +160,7 @@
               <td class="us">●</td><td>—</td><td>—</td><td>—</td>
             </tr>
             <tr>
-              <td data-i18n="cmp.row.local">Local-first; cloud is opt-in</td>
+              <td data-i18n="cmp.row.local">Local-first; no cloud component</td>
               <td class="us">●</td><td data-i18n="cmp.hybrid">hybrid</td><td class="us">●</td><td data-i18n="cmp.cloud">cloud-only</td>
             </tr>
             <tr>
@@ -196,7 +196,7 @@
 
     <section class="install" id="install">
       <h2 data-i18n="inst.title">Install in 30 seconds</h2>
-      <p class="lede" data-i18n="inst.lede">Two helpers: <code>np</code> for new projects, <code>adopt</code> for existing ones. Works on macOS, Linux, and WSL2.</p>
+      <p class="lede" data-i18n="inst.lede">Two helpers: <code>np</code> for new projects, <code>adopt</code> for existing ones. Works on macOS, Linux, Windows (native or WSL2). Requires Node 20+ and Claude Code.</p>
       <div class="install-card">
         <div class="install-step">
           <div class="step-num">1</div>
@@ -242,7 +242,7 @@ adopt</code></pre>
         </details>
         <details>
           <summary data-i18n="faq.q2">Does my code leave my machine?</summary>
-          <p data-i18n="faq.a2">On the Free tier: no. Hooks write to <code>logs/devlog.sqlite</code> on your disk. The web viewer parses SQLite in your browser via WASM — zero upload. On Pro/Team, you opt in to cloud sync per project; we store the SQLite encrypted at rest and never train models on your data. See the <a href="/privacy.html">privacy policy</a>.</p>
+          <p data-i18n="faq.a2">No. Hooks write to <code>logs/devlog.sqlite</code> on your disk. The web viewer parses SQLite in your browser via WASM — zero upload. Codetrail has no cloud component; everything runs locally. See the <a href="/privacy.html">privacy policy</a>.</p>
         </details>
         <details>
           <summary data-i18n="faq.q3">What if Claude Code changes its hook API?</summary>
@@ -250,18 +250,13 @@ adopt</code></pre>
         </details>
         <details>
           <summary data-i18n="faq.q4">Is the code open source?</summary>
-          <p data-i18n="faq.a4">The hooks, landing, and project template are MIT — see <a href="https://github.com/dipgle/codetrail">github.com/dipgle/codetrail</a>. The MCP server binary (<code>project-agent</code>) is closed source; a hosted binary download is on the roadmap. Until then the scaffolder and hooks work standalone — you query the devlog with the <code>sqlite3</code> CLI.</p>
+          <p data-i18n="faq.a4">Yes — everything is MIT. Hooks, landing, project template, and both MCP server implementations (Node + Rust). See <a href="https://github.com/dipgle/codetrail">github.com/dipgle/codetrail</a>.</p>
         </details>
         <details>
           <summary data-i18n="faq.q5">I already use Cursor / Aider — can I still use Codetrail?</summary>
           <p data-i18n="faq.a5">Codetrail's hooks are Claude Code-specific (they hook into Claude Code's PostToolUse / SessionStart events). The browser viewer is editor-agnostic — drop any compatible SQLite there. Aider and Cursor integrations aren't on the roadmap but the schema is documented; community PRs welcome.</p>
         </details>
       </div>
-    </section>
-
-    <section class="pricing" id="pricing">
-      <h2 data-i18n="price.title">Pricing</h2>
-      <p class="lede" data-i18n="price.lede">Codetrail is in open alpha. The free tier — local devlog, hooks, browser viewer, UC/TC tracking — is MIT-licensed and ships today. Pricing for cloud sync (Pro / Team tiers) is being finalized; nothing is committed yet. Join the waitlist below to be notified when paid tiers open.</p>
     </section>
 
     <section class="oss-cta">
@@ -277,13 +272,13 @@ adopt</code></pre>
     </section>
 
     <section class="waitlist" id="waitlist">
-      <h2 data-i18n="wait.title">Get early access</h2>
-      <p data-i18n="wait.lede">Codetrail is in open alpha. The free tier ships today (clone the repo or run the install script); the cloud-sync tier and the MCP binary download are still in progress. Drop your email and we'll send a note when paid tiers open.</p>
+      <h2 data-i18n="wait.title">Stay in the loop</h2>
+      <p data-i18n="wait.lede">Codetrail is free and fully MIT-licensed today — clone the repo or run install.txt. Drop your email if you'd like a short note when a major feature ships. No spam, opt-out anytime.</p>
       <form class="wait-form" id="waitForm" method="POST" action="mailto:codetrail@dipgle.com" enctype="text/plain">
         <input type="email" name="email" required placeholder="you@example.com" data-i18n-attr="placeholder" data-i18n="wait.placeholder" />
-        <button type="submit" class="btn primary" data-i18n="wait.submit">Notify me</button>
+        <button type="submit" class="btn primary" data-i18n="wait.submit">Subscribe</button>
       </form>
-      <p class="wait-meta" data-i18n="wait.meta">No spam. One email when access opens. You can leave anytime.</p>
+      <p class="wait-meta" data-i18n="wait.meta">Occasional product updates. One-click unsubscribe in every email.</p>
     </section>
   </main>
 
@@ -297,7 +292,7 @@ adopt</code></pre>
         <strong data-i18n="foot.product">Product</strong>
         <a href="/#features" data-i18n="nav.features">Features</a>
         <a href="/viewer.html" data-i18n="nav.viewer">Viewer</a>
-        <a href="/#waitlist" data-i18n="nav.waitlist">Waitlist</a>
+        <a href="/#waitlist" data-i18n="nav.waitlist">Updates</a>
       </div>
       <div>
         <strong data-i18n="foot.company">Company</strong>
@@ -314,7 +309,7 @@ adopt</code></pre>
         <strong data-i18n="foot.legal">Legal</strong>
         <a href="/terms.html" data-i18n="foot.terms">Terms</a>
         <a href="/privacy.html" data-i18n="foot.privacy">Privacy</a>
-        <a href="/eula.html" data-i18n="foot.eula">Binary EULA</a>
+        <a href="/eula.html" data-i18n="foot.eula">License</a>
       </div>
     </div>
     <small>© Codetrail — <span data-i18n="foot.powered">Powered by</span> <a href="https://landing.tafalo.com/" target="_blank" rel="noopener">tfl5</a></small>
