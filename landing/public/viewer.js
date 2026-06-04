@@ -201,29 +201,13 @@ function initTabs() {
   });
 }
 
-function base64ToBytes(b64) {
-  const bin = atob(b64);
-  const out = new Uint8Array(bin.length);
-  for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
-  return out;
-}
-
 async function loadDemoFromUrl(url) {
   const status = document.getElementById("dropStatus");
   if (status) status.textContent = `Loading demo…`;
   try {
     const resp = await fetch(url);
     if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-    let bytes;
-    if (url.endsWith(".json")) {
-      const payload = await resp.json();
-      if (payload.format !== "sqlite-b64" || !payload.data) {
-        throw new Error("unexpected demo payload format");
-      }
-      bytes = base64ToBytes(payload.data);
-    } else {
-      bytes = new Uint8Array(await resp.arrayBuffer());
-    }
+    const bytes = new Uint8Array(await resp.arrayBuffer());
     const SQL = await ensureSql();
     if (DB) { DB.close(); DB = null; }
     DB = new SQL.Database(bytes);
@@ -241,7 +225,7 @@ document.addEventListener("DOMContentLoaded", () => {
   initTabs();
   const params = new URLSearchParams(location.search);
   if (params.get("demo") === "1") {
-    loadDemoFromUrl("/demo-devlog.json");
+    loadDemoFromUrl("/demo-devlog.sqlite");
   }
 });
 

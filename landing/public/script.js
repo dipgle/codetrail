@@ -152,7 +152,7 @@ const I18N = {
     "about.principles.p4": "Reversible mistakes ship in minutes. Irreversible ones (pricing, legal, data deletion) wait 24 hours for advisor review. So far this has caught zero things, but it's the rule.",
     "about.principles.p5": "If Trace can't fix it, Trace says so. AI doesn't pretend to be human. AI doesn't fake testimonials. AI doesn't sign legal documents it can't enforce. Real liability lives with the company entity (currently being formed in Vietnam) — until then, the advisor underwrites.",
     "about.cta.h": "Want to be the first to use it?",
-    "about.cta.p": "The waitlist is the front door. We're opening Pro tier to ~20 founding users at $5/mo lifetime (-44% from the public $9). Drop your email and we'll send the install link + a personal note.",
+    "about.cta.p": "The waitlist is the front door. Early signups get the install link first and a personal note when the beta opens. Pricing for the paid tier is still being finalized; nothing is committed yet.",
     "about.cta.btn": "Join the waitlist",
 
     "inst.title": "Install in 30 seconds",
@@ -241,7 +241,7 @@ const I18N = {
     "priv.s9": "9. Cookies",
     "priv.s9p": "A single session cookie when you log in (Pro/Team). No tracking cookies. No advertising cookies. No \"we use cookies, click OK\" theater.",
     "priv.s10": "10. Your rights (GDPR / CCPA / Vietnamese PDPL)",
-    "priv.s10p": "Our lawful basis for processing your email (waitlist) is your consent (GDPR Art. 6(1)(a)); for paid-tier syncs it is contract performance (Art. 6(1)(b)); for security logs it is legitimate interest (Art. 6(1)(f)). You have the right to: access a copy of your data, rectify it, erase it, restrict processing, port it elsewhere, and object. CCPA users additionally have the right to opt out of any sale or share (we do neither). Email codetrail@dipgle.com — we respond within 30 days. You may also lodge a complaint with your local data protection authority (in Vietnam: the Ministry of Public Security under Decree 13/2023/NĐ-CP).",
+    "priv.s10p": "Our lawful basis for processing your email (waitlist) is your consent (GDPR Art. 6(1)(a)); for paid-tier syncs it is contract performance (Art. 6(1)(b)); for security logs it is legitimate interest (Art. 6(1)(f)). You have the right to: access a copy of your data, rectify it, erase it, restrict processing, port it elsewhere, and object. CCPA users additionally have the right to opt out of any sale or share (we do neither). Email codetrail@dipgle.com and we will respond as soon as we reasonably can, and at the latest within the period required by applicable law. You may also lodge a complaint with your local data protection authority (in Vietnam: the Ministry of Public Security under Decree 13/2023/NĐ-CP).",
     "priv.s11": "11. Changes to this policy",
     "priv.s11p": "Material changes get 30 days' email notice. The current version date is at the top.",
 
@@ -433,7 +433,7 @@ const I18N = {
     "about.principles.p4": "Sai có thể sửa được ship trong vài phút. Sai không sửa được (giá, legal, xóa data) đợi cố vấn duyệt 24 giờ. Cho tới giờ rule này chưa catch gì, nhưng vẫn giữ.",
     "about.principles.p5": "Nếu Trace không fix được, Trace nói thẳng. AI không giả vờ là người. AI không fake testimonial. AI không ký giấy tờ pháp lý không enforce được. Trách nhiệm pháp lý thật nằm ở pháp nhân công ty (đang thành lập ở Việt Nam) — tới khi đó, cố vấn underwrite.",
     "about.cta.h": "Muốn là người đầu tiên dùng?",
-    "about.cta.p": "Waitlist là cửa chính. Chúng tôi mở Pro tier cho ~20 founding user với $5/tháng lifetime (-44% so với $9 public). Để lại email, chúng tôi gửi link cài + ghi chú cá nhân.",
+    "about.cta.p": "Waitlist là cửa chính. Người đăng ký sớm sẽ nhận link cài trước và ghi chú cá nhân khi beta mở. Giá cho gói trả phí đang được hoàn thiện; chưa cam kết gì.",
     "about.cta.btn": "Đăng ký waitlist",
 
     "inst.title": "Cài trong 30 giây",
@@ -522,7 +522,7 @@ const I18N = {
     "priv.s9": "9. Cookie",
     "priv.s9p": "Một session cookie duy nhất khi login (Pro/Team). Không tracking cookie. Không quảng cáo cookie. Không trò \"chúng tôi dùng cookie, click OK\" vô nghĩa.",
     "priv.s10": "10. Quyền của bạn (GDPR / CCPA / PDPL Việt Nam)",
-    "priv.s10p": "Cơ sở pháp lý xử lý email (waitlist) là sự đồng ý (GDPR Art. 6(1)(a)); sync Pro/Team là thực hiện hợp đồng (Art. 6(1)(b)); log bảo mật là lợi ích chính đáng (Art. 6(1)(f)). Bạn có quyền: truy cập bản sao data, sửa, xóa, hạn chế xử lý, port đi nơi khác, phản đối. User CCPA thêm quyền opt-out khỏi việc bán/chia sẻ (chúng tôi không làm cả hai). Email codetrail@dipgle.com — chúng tôi trả lời trong 30 ngày. Bạn cũng có thể khiếu nại với cơ quan bảo vệ dữ liệu địa phương (Việt Nam: Bộ Công an theo Nghị định 13/2023/NĐ-CP).",
+    "priv.s10p": "Cơ sở pháp lý xử lý email (waitlist) là sự đồng ý (GDPR Art. 6(1)(a)); sync Pro/Team là thực hiện hợp đồng (Art. 6(1)(b)); log bảo mật là lợi ích chính đáng (Art. 6(1)(f)). Bạn có quyền: truy cập bản sao data, sửa, xóa, hạn chế xử lý, port đi nơi khác, phản đối. User CCPA thêm quyền opt-out khỏi việc bán/chia sẻ (chúng tôi không làm cả hai). Email codetrail@dipgle.com — chúng tôi sẽ phản hồi sớm nhất có thể, và muộn nhất trong thời hạn pháp luật yêu cầu. Bạn cũng có thể khiếu nại với cơ quan bảo vệ dữ liệu địa phương (Việt Nam: Bộ Công an theo Nghị định 13/2023/NĐ-CP).",
     "priv.s11": "11. Thay đổi chính sách",
     "priv.s11p": "Thay đổi material có 30 ngày notice qua email. Ngày phiên bản hiện tại ở đầu trang.",
 
