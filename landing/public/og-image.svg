@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" preserveAspectRatio="xMidYMid meet">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0a0c10"/>
+      <stop offset="100%" stop-color="#111827"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="630" fill="url(#bg)"/>
+
+  <!-- Brand mark, big -->
+  <g transform="translate(96 96)">
+    <rect width="120" height="120" rx="28" fill="#0a0c10" stroke="#1f2937" stroke-width="2"/>
+    <path d="M30 26 L80 26 L92 42 L92 96 L30 96 Z" fill="none" stroke="#6ee7b7" stroke-width="6" stroke-linejoin="round"/>
+    <path d="M48 56 L74 56 M48 72 L66 72" stroke="#6ee7b7" stroke-width="6" stroke-linecap="round"/>
+    <circle cx="86" cy="36" r="9" fill="#6ee7b7"/>
+  </g>
+
+  <text x="240" y="148" font-family="-apple-system, system-ui, sans-serif" font-size="56" font-weight="700" fill="#f9fafb">Codetrail</text>
+  <text x="240" y="194" font-family="-apple-system, system-ui, sans-serif" font-size="26" fill="#6ee7b7">⌁ Persistent memory for AI coding sessions</text>
+
+  <!-- Headline -->
+  <text x="96" y="340" font-family="-apple-system, system-ui, sans-serif" font-size="64" font-weight="700" fill="#f9fafb">Stop re-explaining your</text>
+  <text x="96" y="416" font-family="-apple-system, system-ui, sans-serif" font-size="64" font-weight="700" fill="#f9fafb">project to the AI.</text>
+
+  <!-- Strap -->
+  <text x="96" y="500" font-family="-apple-system, system-ui, sans-serif" font-size="28" fill="#9ca3af">Auto-logging devlog · UC/TC tracking · stale-resume warnings</text>
+
+  <!-- URL -->
+  <text x="96" y="566" font-family="ui-monospace, SF Mono, Menlo, monospace" font-size="22" fill="#6ee7b7">codetrail.dipgle.com</text>
+
+  <!-- Open alpha tag -->
+  <g transform="translate(996 540)">
+    <rect width="108" height="36" rx="18" fill="#0a0c10" stroke="#374151" stroke-width="1"/>
+    <text x="54" y="24" font-family="-apple-system, system-ui, sans-serif" font-size="16" fill="#fbbf24" text-anchor="middle">open alpha</text>
+  </g>
+</svg>
