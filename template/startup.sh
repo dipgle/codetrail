@@ -117,6 +117,25 @@ CREATE TABLE IF NOT EXISTS test_runs (
   notes         TEXT
 );
 CREATE INDEX IF NOT EXISTS idx_test_runs_tc ON test_runs(test_case_id);
+
+CREATE TABLE IF NOT EXISTS inbox (
+  id                INTEGER PRIMARY KEY AUTOINCREMENT,
+  ts                TEXT NOT NULL,
+  sender_project    TEXT NOT NULL,
+  recipient_project TEXT NOT NULL,
+  kind              TEXT NOT NULL,
+  priority          TEXT NOT NULL DEFAULT 'normal',
+  ref_type          TEXT,
+  ref_id            TEXT,
+  content           TEXT,
+  status            TEXT NOT NULL DEFAULT 'unread',
+  resolved_ts       TEXT,
+  resolved_by       TEXT,
+  resolution        TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_inbox_status ON inbox(status);
+CREATE INDEX IF NOT EXISTS idx_inbox_ref    ON inbox(ref_type, ref_id);
+CREATE INDEX IF NOT EXISTS idx_inbox_sender ON inbox(sender_project);
 SQL
     else
         echo "sqlite3 CLI not found; MCP server will create schema on first write."
@@ -137,6 +156,17 @@ MCP_REGISTERED=0
 MCP_NODE_DIR="$MCP_DIR/project-agent-node"
 MCP_NODE_DIST="$MCP_NODE_DIR/dist/server.js"
 MCP_RUST_BIN="$MCP_DIR/project-agent-rs/target/release/project-agent"
+
+# Derive PROJECTS_ROOT + project name for cross-project inbox.
+# Convention: <root>/AI/<project>/ → PROJECTS_ROOT=<root>, project=<project>.
+# Fallback: dirname(PROJECT_DIR) as root, basename(PROJECT_DIR) as project.
+PROJECT_NAME="$(basename "$PROJECT_DIR")"
+PARENT_DIR="$(dirname "$PROJECT_DIR")"
+if [ "$(basename "$PARENT_DIR")" = "AI" ]; then
+    PROJECTS_ROOT_GUESS="$(dirname "$PARENT_DIR")"
+else
+    PROJECTS_ROOT_GUESS="$PARENT_DIR"
+fi
 
 choose_mcp() {
     case "${CODETRAIL_MCP:-}" in
@@ -169,6 +199,8 @@ register_node() {
         -s project \
         -e PROJECT_MEMORY_DIR="$PROJECT_DIR/memory" \
         -e PROJECT_LOG_DIR="$PROJECT_DIR/logs" \
+        -e PROJECTS_ROOT="$PROJECTS_ROOT_GUESS" \
+        -e CODETRAIL_PROJECT="$PROJECT_NAME" \
         -- node "$MCP_NODE_DIST" && MCP_REGISTERED=1
 }
 
@@ -179,6 +211,8 @@ register_rust() {
         -s project \
         -e PROJECT_MEMORY_DIR="$PROJECT_DIR/memory" \
         -e PROJECT_LOG_DIR="$PROJECT_DIR/logs" \
+        -e PROJECTS_ROOT="$PROJECTS_ROOT_GUESS" \
+        -e CODETRAIL_PROJECT="$PROJECT_NAME" \
         -- "$MCP_RUST_BIN" && MCP_REGISTERED=1
 }
 

@@ -1,7 +1,9 @@
 // project-agent MCP server (Rust port).
-// API parity with original mcp/server.js. Two modes:
-//   - Workspace mode: PROJECT_LOG_DIR or PROJECT_MEMORY_DIR set
-//   - Router mode:    PROJECTS_ROOT set → tools require `project` arg
+// API parity with project-agent-node. Modes:
+//   - Workspace mode: PROJECT_LOG_DIR / PROJECT_MEMORY_DIR set
+//   - Router mode:    PROJECTS_ROOT set, PROJECT_LOG_DIR not set
+//   - Workspace + cross-project: both PROJECTS_ROOT and PROJECT_LOG_DIR set →
+//     own devlog as default, inbox tools can reach other projects via PROJECTS_ROOT/AI/
 
 use anyhow::Result;
 use rmcp::{
@@ -105,6 +107,46 @@ struct ProjectOnlyParams {
 struct NoParams {}
 
 #[derive(Debug, Deserialize, schemars::JsonSchema)]
+struct SendMessageParams {
+    to: String,
+    kind: String,
+    sender: Option<String>,
+    priority: Option<String>,
+    #[serde(rename = "refType")]
+    ref_type: Option<String>,
+    #[serde(rename = "refId")]
+    ref_id: Option<String>,
+    content: Option<String>,
+}
+
+#[derive(Debug, Deserialize, schemars::JsonSchema)]
+struct ListInboxParams {
+    project: Option<String>,
+    status: Option<String>,
+    sender: Option<String>,
+    limit: Option<i64>,
+}
+
+#[derive(Debug, Deserialize, schemars::JsonSchema)]
+struct MarkResolvedParams {
+    #[serde(rename = "inboxId")]
+    inbox_id: i64,
+    resolution: Option<String>,
+    #[serde(rename = "resolvedBy")]
+    resolved_by: Option<String>,
+    project: Option<String>,
+}
+
+#[derive(Debug, Deserialize, schemars::JsonSchema)]
+struct GetThreadParams {
+    #[serde(rename = "refId")]
+    ref_id: String,
+    #[serde(rename = "refType")]
+    ref_type: Option<String>,
+    project: Option<String>,
+}
+
+#[derive(Debug, Deserialize, schemars::JsonSchema)]
 struct SaveMemoryParams {
     category: String,
     data: serde_json::Value,
@@ -128,12 +170,16 @@ struct State {
     default_devlog: Option<Arc<Devlog>>,
     devlog_cache: Mutex<HashMap<String, Arc<Devlog>>>,
     memory_dir: PathBuf,
+    current_project: Option<String>,
 }
 
 impl State {
     fn from_env() -> Result<Self> {
         let projects_root = std::env::var("PROJECTS_ROOT").ok().map(PathBuf::from);
-        let router_mode = projects_root.is_some();
+        let log_env = std::env::var("PROJECT_LOG_DIR").ok();
+        // Router mode = PROJECTS_ROOT set AND no project-scoped log dir.
+        // Both set => workspace + cross-project (default devlog + projectsRoot access).
+        let router_mode = projects_root.is_some() && log_env.is_none();
 
         let memory_dir = std::env::var("PROJECT_MEMORY_DIR")
             .ok()
@@ -143,8 +189,8 @@ impl State {
         let default_devlog = if router_mode {
             None
         } else {
-            let log_dir = std::env::var("PROJECT_LOG_DIR")
-                .ok()
+            let log_dir = log_env
+                .as_ref()
                 .map(PathBuf::from)
                 .unwrap_or_else(|| {
                     if memory_dir.parent().is_some() {
@@ -157,13 +203,35 @@ impl State {
             Some(Arc::new(Devlog::open(&db)?))
         };
 
+        let current_project = std::env::var("CODETRAIL_PROJECT")
+            .ok()
+            .or_else(|| Self::derive_project_name(&memory_dir));
+
         Ok(State {
             router_mode,
             projects_root,
             default_devlog,
             devlog_cache: Mutex::new(HashMap::new()),
             memory_dir,
+            current_project,
         })
+    }
+
+    fn derive_project_name(memory_dir: &PathBuf) -> Option<String> {
+        // Convention: <root>/AI/<project>/memory or <root>/<project>/memory.
+        let parts: Vec<&str> = memory_dir
+            .components()
+            .filter_map(|c| c.as_os_str().to_str())
+            .collect();
+        for (i, p) in parts.iter().enumerate() {
+            if *p == "AI" && i + 1 < parts.len() {
+                return Some(parts[i + 1].to_string());
+            }
+        }
+        if parts.len() >= 2 && parts.last() == Some(&"memory") {
+            return Some(parts[parts.len() - 2].to_string());
+        }
+        None
     }
 
     fn resolve_devlog(&self, project: Option<String>) -> Result<Arc<Devlog>> {
@@ -175,16 +243,23 @@ impl State {
         }
         let project = project
             .ok_or_else(|| anyhow::anyhow!("router mode requires 'project' argument"))?;
+        self.resolve_external_devlog(&project)
+    }
 
+    fn resolve_external_devlog(&self, project: &str) -> Result<Arc<Devlog>> {
+        if self.projects_root.is_none() {
+            return Err(anyhow::anyhow!(
+                "Cross-project messaging requires PROJECTS_ROOT env to be set"
+            ));
+        }
         {
             let cache = self.devlog_cache.lock().unwrap();
-            if let Some(dv) = cache.get(&project) {
+            if let Some(dv) = cache.get(project) {
                 return Ok(dv.clone());
             }
         }
-
         let root = self.projects_root.as_ref().unwrap();
-        let candidates = vec![root.join("AI").join(&project), root.join(&project)];
+        let candidates = vec![root.join("AI").join(project), root.join(project)];
         let project_dir = candidates
             .iter()
             .find(|d| d.exists())
@@ -197,7 +272,6 @@ impl State {
                 )
             })?
             .clone();
-
         let db = project_dir.join("logs").join("devlog.sqlite");
         if !db.exists() {
             return Err(anyhow::anyhow!(
@@ -206,13 +280,30 @@ impl State {
                 db.display()
             ));
         }
-
         let dv = Arc::new(Devlog::open(&db)?);
         {
             let mut cache = self.devlog_cache.lock().unwrap();
-            cache.insert(project, dv.clone());
+            cache.insert(project.to_string(), dv.clone());
         }
         Ok(dv)
+    }
+
+    /// For inbox tools: explicit project param > current project's own devlog.
+    fn resolve_inbox_devlog(&self, project: Option<&str>) -> Result<Arc<Devlog>> {
+        if let Some(p) = project {
+            if Some(p) != self.current_project.as_deref() {
+                return self.resolve_external_devlog(p);
+            }
+        }
+        if let Some(dv) = &self.default_devlog {
+            return Ok(dv.clone());
+        }
+        if let Some(p) = project {
+            return self.resolve_external_devlog(p);
+        }
+        Err(anyhow::anyhow!(
+            "No project specified and no default devlog"
+        ))
     }
 
     fn list_projects(&self) -> Result<Vec<serde_json::Value>> {
@@ -431,6 +522,95 @@ impl ProjectAgent {
     #[tool(description = "Router mode only. List all projects under PROJECTS_ROOT/AI/ that have devlog.sqlite (adopted).")]
     fn list_projects(&self, _: Parameters<NoParams>) -> String {
         match self.state.list_projects() {
+            Ok(rows) => j(rows),
+            Err(e) => jerr(e),
+        }
+    }
+
+    // --- Inbox: cross-project messaging ---
+
+    #[tool(
+        description = "Send a message to another project's inbox. Requires PROJECTS_ROOT env. \
+        kinds (suggested): feature_request|api_change|help|pattern|reply|note. \
+        priority: urgent|high|normal|low (default normal). Use refId to thread related messages."
+    )]
+    fn send_message(&self, Parameters(p): Parameters<SendMessageParams>) -> String {
+        let dv = match self.state.resolve_external_devlog(&p.to) {
+            Ok(dv) => dv,
+            Err(e) => return jerr(e),
+        };
+        let sender_project = match p.sender.or_else(|| self.state.current_project.clone()) {
+            Some(s) => s,
+            None => {
+                return jerr(
+                    "Could not determine sender project. Pass 'sender' arg or set CODETRAIL_PROJECT env.",
+                )
+            }
+        };
+        let priority = p.priority.as_deref().unwrap_or("normal");
+        match dv.send_inbox_message(
+            &sender_project,
+            &p.to,
+            &p.kind,
+            priority,
+            p.ref_type.as_deref(),
+            p.ref_id.as_deref(),
+            p.content.as_deref(),
+        ) {
+            Ok(id) => format!(
+                r#"{{"id":{},"to":"{}","sender":"{}"}}"#,
+                id, p.to, sender_project
+            ),
+            Err(e) => jerr(e),
+        }
+    }
+
+    #[tool(
+        description = "List inbox messages for a project (defaults to current). \
+        Filter by status (unread|read|resolved) and/or sender. Ordered by priority (urgent first), newest first within same priority."
+    )]
+    fn list_inbox(&self, Parameters(p): Parameters<ListInboxParams>) -> String {
+        let dv = match self.state.resolve_inbox_devlog(p.project.as_deref()) {
+            Ok(dv) => dv,
+            Err(e) => return jerr(e),
+        };
+        match dv.list_inbox(p.status.as_deref(), p.sender.as_deref(), p.limit.unwrap_or(50)) {
+            Ok(rows) => j(rows),
+            Err(e) => jerr(e),
+        }
+    }
+
+    #[tool(
+        description = "Mark an inbox message as resolved. resolution is a one-line note about how it was handled."
+    )]
+    fn mark_resolved(&self, Parameters(p): Parameters<MarkResolvedParams>) -> String {
+        let dv = match self.state.resolve_inbox_devlog(p.project.as_deref()) {
+            Ok(dv) => dv,
+            Err(e) => return jerr(e),
+        };
+        let by = p
+            .resolved_by
+            .or_else(|| self.state.current_project.clone())
+            .unwrap_or_else(|| "unknown".to_string());
+        match dv.mark_inbox_resolved(p.inbox_id, &by, p.resolution.as_deref()) {
+            Ok(ok) => format!(
+                r#"{{"id":{},"resolved":{},"resolvedBy":"{}"}}"#,
+                p.inbox_id, ok, by
+            ),
+            Err(e) => jerr(e),
+        }
+    }
+
+    #[tool(
+        description = "Get all inbox messages sharing the same refId (a conversation thread). \
+        Optionally filter by refType. Rows returned oldest first."
+    )]
+    fn get_thread(&self, Parameters(p): Parameters<GetThreadParams>) -> String {
+        let dv = match self.state.resolve_inbox_devlog(p.project.as_deref()) {
+            Ok(dv) => dv,
+            Err(e) => return jerr(e),
+        };
+        match dv.get_inbox_thread(p.ref_type.as_deref(), &p.ref_id) {
             Ok(rows) => j(rows),
             Err(e) => jerr(e),
         }

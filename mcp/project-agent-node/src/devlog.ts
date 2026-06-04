@@ -68,7 +68,28 @@ CREATE TABLE IF NOT EXISTS test_runs (
 );
 
 CREATE INDEX IF NOT EXISTS idx_test_runs_tc ON test_runs(test_case_id);
+
+CREATE TABLE IF NOT EXISTS inbox (
+  id                INTEGER PRIMARY KEY AUTOINCREMENT,
+  ts                TEXT NOT NULL,
+  sender_project    TEXT NOT NULL,
+  recipient_project TEXT NOT NULL,
+  kind              TEXT NOT NULL,
+  priority          TEXT NOT NULL DEFAULT 'normal',
+  ref_type          TEXT,
+  ref_id            TEXT,
+  content           TEXT,
+  status            TEXT NOT NULL DEFAULT 'unread',
+  resolved_ts       TEXT,
+  resolved_by       TEXT,
+  resolution        TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_inbox_status ON inbox(status);
+CREATE INDEX IF NOT EXISTS idx_inbox_ref    ON inbox(ref_type, ref_id);
+CREATE INDEX IF NOT EXISTS idx_inbox_sender ON inbox(sender_project);
 `;
+
+const VALID_INBOX_PRIORITIES = ["urgent", "high", "normal", "low"] as const;
 
 const VALID_RUN_RESULTS = ["pass", "fail", "error", "skipped"] as const;
 type RunResult = (typeof VALID_RUN_RESULTS)[number];
@@ -179,6 +200,22 @@ export interface NextTcFull {
   steps: string | null;
   expected: string | null;
   created_at: string | null;
+}
+
+export interface InboxRow {
+  id: number;
+  ts: string;
+  sender_project: string;
+  recipient_project: string;
+  kind: string;
+  priority: string;
+  ref_type: string | null;
+  ref_id: string | null;
+  content: string | null;
+  status: string;
+  resolved_ts: string | null;
+  resolved_by: string | null;
+  resolution: string | null;
 }
 
 export interface MissingTcUc {
@@ -574,6 +611,94 @@ export class Devlog {
       message:
         "No pending work signals found. Consider exploratory testing or new UC.",
     };
+  }
+
+  // --- Inbox (cross-project messaging) ---
+
+  sendInboxMessage(
+    senderProject: string,
+    recipientProject: string,
+    kind: string,
+    priority: string,
+    refType: string | null,
+    refId: string | null,
+    content: string | null
+  ): number {
+    if (!(VALID_INBOX_PRIORITIES as readonly string[]).includes(priority)) {
+      throw new Error(`invalid priority: ${priority} (use urgent|high|normal|low)`);
+    }
+    const info = this.db
+      .prepare(
+        `INSERT INTO inbox
+           (ts, sender_project, recipient_project, kind, priority,
+            ref_type, ref_id, content, status)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'unread')`
+      )
+      .run(this.now(), senderProject, recipientProject, kind, priority, refType, refId, content);
+    return Number(info.lastInsertRowid);
+  }
+
+  listInbox(
+    status: string | null,
+    sender: string | null,
+    limit: number
+  ): InboxRow[] {
+    const clauses: string[] = [];
+    const args: (string | number)[] = [];
+    if (status) {
+      clauses.push("status = ?");
+      args.push(status);
+    }
+    if (sender) {
+      clauses.push("sender_project = ?");
+      args.push(sender);
+    }
+    let sql = `SELECT id, ts, sender_project, recipient_project, kind, priority,
+                      ref_type, ref_id, content, status, resolved_ts, resolved_by, resolution
+               FROM inbox`;
+    if (clauses.length > 0) sql += ` WHERE ${clauses.join(" AND ")}`;
+    sql += " ORDER BY CASE priority WHEN 'urgent' THEN 0 WHEN 'high' THEN 1 WHEN 'normal' THEN 2 ELSE 3 END, id DESC LIMIT ?";
+    args.push(limit);
+    return this.db.prepare(sql).all(...args) as InboxRow[];
+  }
+
+  markInboxResolved(
+    inboxId: number,
+    resolvedBy: string,
+    resolution: string | null
+  ): boolean {
+    const info = this.db
+      .prepare(
+        `UPDATE inbox
+           SET status = 'resolved',
+               resolved_ts = ?,
+               resolved_by = ?,
+               resolution = ?
+         WHERE id = ?`
+      )
+      .run(this.now(), resolvedBy, resolution, inboxId);
+    return info.changes > 0;
+  }
+
+  markInboxRead(inboxId: number): boolean {
+    const info = this.db
+      .prepare(
+        `UPDATE inbox SET status = 'read' WHERE id = ? AND status = 'unread'`
+      )
+      .run(inboxId);
+    return info.changes > 0;
+  }
+
+  getInboxThread(refType: string | null, refId: string): InboxRow[] {
+    const sql = refType
+      ? `SELECT id, ts, sender_project, recipient_project, kind, priority,
+                ref_type, ref_id, content, status, resolved_ts, resolved_by, resolution
+         FROM inbox WHERE ref_type = ? AND ref_id = ? ORDER BY id ASC`
+      : `SELECT id, ts, sender_project, recipient_project, kind, priority,
+                ref_type, ref_id, content, status, resolved_ts, resolved_by, resolution
+         FROM inbox WHERE ref_id = ? ORDER BY id ASC`;
+    const stmt = this.db.prepare(sql);
+    return (refType ? stmt.all(refType, refId) : stmt.all(refId)) as InboxRow[];
   }
 
   lastSession(): SessionRow | null {

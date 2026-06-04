@@ -71,7 +71,28 @@ CREATE TABLE IF NOT EXISTS test_runs (
 );
 
 CREATE INDEX IF NOT EXISTS idx_test_runs_tc ON test_runs(test_case_id);
+
+CREATE TABLE IF NOT EXISTS inbox (
+  id                INTEGER PRIMARY KEY AUTOINCREMENT,
+  ts                TEXT NOT NULL,
+  sender_project    TEXT NOT NULL,
+  recipient_project TEXT NOT NULL,
+  kind              TEXT NOT NULL,
+  priority          TEXT NOT NULL DEFAULT 'normal',
+  ref_type          TEXT,
+  ref_id            TEXT,
+  content           TEXT,
+  status            TEXT NOT NULL DEFAULT 'unread',
+  resolved_ts       TEXT,
+  resolved_by       TEXT,
+  resolution        TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_inbox_status ON inbox(status);
+CREATE INDEX IF NOT EXISTS idx_inbox_ref    ON inbox(ref_type, ref_id);
+CREATE INDEX IF NOT EXISTS idx_inbox_sender ON inbox(sender_project);
 "#;
+
+const VALID_INBOX_PRIORITIES: &[&str] = &["urgent", "high", "normal", "low"];
 
 pub struct Devlog {
     conn: Mutex<Connection>,
@@ -575,6 +596,168 @@ impl Devlog {
         })
     }
 
+    // --- Inbox (cross-project messaging) ---
+
+    pub fn send_inbox_message(
+        &self,
+        sender_project: &str,
+        recipient_project: &str,
+        kind: &str,
+        priority: &str,
+        ref_type: Option<&str>,
+        ref_id: Option<&str>,
+        content: Option<&str>,
+    ) -> Result<i64> {
+        if !VALID_INBOX_PRIORITIES.contains(&priority) {
+            return Err(anyhow!(
+                "invalid priority: {} (use urgent|high|normal|low)",
+                priority
+            ));
+        }
+        let conn = self.conn.lock().unwrap();
+        conn.execute(
+            r#"INSERT INTO inbox
+                 (ts, sender_project, recipient_project, kind, priority,
+                  ref_type, ref_id, content, status)
+               VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, 'unread')"#,
+            params![
+                Self::now(),
+                sender_project,
+                recipient_project,
+                kind,
+                priority,
+                ref_type,
+                ref_id,
+                content
+            ],
+        )?;
+        Ok(conn.last_insert_rowid())
+    }
+
+    pub fn list_inbox(
+        &self,
+        status: Option<&str>,
+        sender: Option<&str>,
+        limit: i64,
+    ) -> Result<Vec<InboxRow>> {
+        let conn = self.conn.lock().unwrap();
+        let mut sql = String::from(
+            "SELECT id, ts, sender_project, recipient_project, kind, priority,
+                    ref_type, ref_id, content, status, resolved_ts, resolved_by, resolution
+             FROM inbox",
+        );
+        let mut clauses = Vec::new();
+        if status.is_some() {
+            clauses.push("status = ?");
+        }
+        if sender.is_some() {
+            clauses.push("sender_project = ?");
+        }
+        if !clauses.is_empty() {
+            sql.push_str(" WHERE ");
+            sql.push_str(&clauses.join(" AND "));
+        }
+        sql.push_str(
+            " ORDER BY CASE priority WHEN 'urgent' THEN 0 WHEN 'high' THEN 1 \
+             WHEN 'normal' THEN 2 ELSE 3 END, id DESC LIMIT ?",
+        );
+        let mut stmt = conn.prepare(&sql)?;
+        let map = |row: &rusqlite::Row| -> rusqlite::Result<InboxRow> {
+            Ok(InboxRow {
+                id: row.get(0)?,
+                ts: row.get(1)?,
+                sender_project: row.get(2)?,
+                recipient_project: row.get(3)?,
+                kind: row.get(4)?,
+                priority: row.get(5)?,
+                ref_type: row.get(6)?,
+                ref_id: row.get(7)?,
+                content: row.get(8)?,
+                status: row.get(9)?,
+                resolved_ts: row.get(10)?,
+                resolved_by: row.get(11)?,
+                resolution: row.get(12)?,
+            })
+        };
+        let rows = match (status, sender) {
+            (Some(st), Some(sn)) => stmt
+                .query_map(params![st, sn, limit], map)?
+                .collect::<Result<Vec<_>, _>>()?,
+            (Some(st), None) => stmt
+                .query_map(params![st, limit], map)?
+                .collect::<Result<Vec<_>, _>>()?,
+            (None, Some(sn)) => stmt
+                .query_map(params![sn, limit], map)?
+                .collect::<Result<Vec<_>, _>>()?,
+            (None, None) => stmt
+                .query_map(params![limit], map)?
+                .collect::<Result<Vec<_>, _>>()?,
+        };
+        Ok(rows)
+    }
+
+    pub fn mark_inbox_resolved(
+        &self,
+        inbox_id: i64,
+        resolved_by: &str,
+        resolution: Option<&str>,
+    ) -> Result<bool> {
+        let conn = self.conn.lock().unwrap();
+        let changed = conn.execute(
+            r#"UPDATE inbox
+                 SET status = 'resolved',
+                     resolved_ts = ?1,
+                     resolved_by = ?2,
+                     resolution = ?3
+               WHERE id = ?4"#,
+            params![Self::now(), resolved_by, resolution, inbox_id],
+        )?;
+        Ok(changed > 0)
+    }
+
+    pub fn get_inbox_thread(
+        &self,
+        ref_type: Option<&str>,
+        ref_id: &str,
+    ) -> Result<Vec<InboxRow>> {
+        let conn = self.conn.lock().unwrap();
+        let sql = if ref_type.is_some() {
+            "SELECT id, ts, sender_project, recipient_project, kind, priority,
+                    ref_type, ref_id, content, status, resolved_ts, resolved_by, resolution
+             FROM inbox WHERE ref_type = ?1 AND ref_id = ?2 ORDER BY id ASC"
+        } else {
+            "SELECT id, ts, sender_project, recipient_project, kind, priority,
+                    ref_type, ref_id, content, status, resolved_ts, resolved_by, resolution
+             FROM inbox WHERE ref_id = ?1 ORDER BY id ASC"
+        };
+        let mut stmt = conn.prepare(sql)?;
+        let map = |row: &rusqlite::Row| -> rusqlite::Result<InboxRow> {
+            Ok(InboxRow {
+                id: row.get(0)?,
+                ts: row.get(1)?,
+                sender_project: row.get(2)?,
+                recipient_project: row.get(3)?,
+                kind: row.get(4)?,
+                priority: row.get(5)?,
+                ref_type: row.get(6)?,
+                ref_id: row.get(7)?,
+                content: row.get(8)?,
+                status: row.get(9)?,
+                resolved_ts: row.get(10)?,
+                resolved_by: row.get(11)?,
+                resolution: row.get(12)?,
+            })
+        };
+        let rows = if let Some(rt) = ref_type {
+            stmt.query_map(params![rt, ref_id], map)?
+                .collect::<Result<Vec<_>, _>>()?
+        } else {
+            stmt.query_map(params![ref_id], map)?
+                .collect::<Result<Vec<_>, _>>()?
+        };
+        Ok(rows)
+    }
+
     pub fn last_session(&self) -> Result<Option<Session>> {
         let conn = self.conn.lock().unwrap();
         let mut stmt =
@@ -712,6 +895,23 @@ pub struct NextTcFull {
     pub steps: Option<String>,
     pub expected: Option<String>,
     pub created_at: Option<String>,
+}
+
+#[derive(Debug, Serialize, Clone)]
+pub struct InboxRow {
+    pub id: i64,
+    pub ts: String,
+    pub sender_project: String,
+    pub recipient_project: String,
+    pub kind: String,
+    pub priority: String,
+    pub ref_type: Option<String>,
+    pub ref_id: Option<String>,
+    pub content: Option<String>,
+    pub status: String,
+    pub resolved_ts: Option<String>,
+    pub resolved_by: Option<String>,
+    pub resolution: Option<String>,
 }
 
 #[derive(Debug, Serialize)]

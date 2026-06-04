@@ -1,8 +1,10 @@
 #!/usr/bin/env node
 // project-agent MCP server (TypeScript port).
-// API parity with project-agent-rs. Two modes:
-//   - Workspace mode: PROJECT_LOG_DIR or PROJECT_MEMORY_DIR set
-//   - Router mode:    PROJECTS_ROOT set → tools require `project` arg
+// API parity with project-agent-rs. Modes:
+//   - Workspace mode: PROJECT_LOG_DIR / PROJECT_MEMORY_DIR set
+//   - Router mode:    PROJECTS_ROOT set, PROJECT_LOG_DIR not set → tools require `project` arg
+//   - Workspace + cross-project: both PROJECTS_ROOT and PROJECT_LOG_DIR set →
+//     own devlog as default, but inbox tools can resolve other projects under PROJECTS_ROOT/AI/
 
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
@@ -27,24 +29,91 @@ class State {
   readonly defaultDevlog: Devlog | null;
   private cache = new Map<string, Devlog>();
   readonly memoryDir: string;
+  readonly currentProject: string | null;
 
   constructor() {
     const root = process.env.PROJECTS_ROOT;
     this.projectsRoot = root ? resolve(root) : null;
-    this.routerMode = this.projectsRoot !== null;
 
+    const logEnv = process.env.PROJECT_LOG_DIR;
     const memEnv = process.env.PROJECT_MEMORY_DIR;
     this.memoryDir = memEnv ? resolve(memEnv) : join(process.cwd(), "memory");
+
+    // Router mode = PROJECTS_ROOT set AND no project-scoped log dir.
+    // If both are set we're in workspace+cross-project: own devlog as default,
+    // inbox tools can still reach other projects via projectsRoot.
+    this.routerMode = this.projectsRoot !== null && !logEnv;
 
     if (this.routerMode) {
       this.defaultDevlog = null;
     } else {
-      const logEnv = process.env.PROJECT_LOG_DIR;
       const logDir = logEnv
         ? resolve(logEnv)
         : join(dirname(this.memoryDir), "logs");
       this.defaultDevlog = new Devlog(join(logDir, "devlog.sqlite"));
     }
+
+    this.currentProject =
+      process.env.CODETRAIL_PROJECT ??
+      this.deriveProjectName(this.memoryDir, this.projectsRoot);
+  }
+
+  private deriveProjectName(
+    memoryDir: string,
+    projectsRoot: string | null
+  ): string | null {
+    // Convention: <root>/AI/<project>/memory or <root>/<project>/memory.
+    const parts = memoryDir.split(/[\\/]/).filter(Boolean);
+    const aiIdx = parts.findIndex(
+      (p, i) => p === "AI" && i + 1 < parts.length
+    );
+    if (aiIdx >= 0) return parts[aiIdx + 1] ?? null;
+    // Fallback: parent of memory dir basename
+    if (parts.length >= 2 && parts[parts.length - 1] === "memory") {
+      return parts[parts.length - 2] ?? null;
+    }
+    return null;
+  }
+
+  resolveExternalDevlog(project: string): Devlog {
+    if (!this.projectsRoot) {
+      throw new Error(
+        "Cross-project messaging requires PROJECTS_ROOT env to be set"
+      );
+    }
+    const cached = this.cache.get(project);
+    if (cached) return cached;
+    const candidates = [
+      join(this.projectsRoot, "AI", project),
+      join(this.projectsRoot, project),
+    ];
+    const projectDir = candidates.find((d) => existsSync(d));
+    if (!projectDir) {
+      throw new Error(
+        `Project '${project}' not found under ${this.projectsRoot}/AI/ or ${this.projectsRoot}/`
+      );
+    }
+    const db = join(projectDir, "logs", "devlog.sqlite");
+    if (!existsSync(db)) {
+      throw new Error(
+        `Project '${project}' has no devlog at ${db}. Run 'adopt' first.`
+      );
+    }
+    const dv = new Devlog(db);
+    this.cache.set(project, dv);
+    return dv;
+  }
+
+  // Resolve devlog for inbox tools: explicit project param > current project's own devlog.
+  resolveInboxDevlog(project: string | undefined): Devlog {
+    if (project && project !== this.currentProject) {
+      return this.resolveExternalDevlog(project);
+    }
+    if (this.defaultDevlog) return this.defaultDevlog;
+    if (project) return this.resolveExternalDevlog(project);
+    throw new Error(
+      "No project specified and no default devlog (running in pure router mode without project arg)"
+    );
   }
 
   resolveDevlog(project: string | undefined): Devlog {
@@ -393,6 +462,117 @@ server.registerTool(
   async () => {
     try {
       return textResult(state.listProjects());
+    } catch (e) {
+      return errResult(e);
+    }
+  }
+);
+
+// --- Inbox: cross-project messaging --------------------------------------
+
+server.registerTool(
+  "send_message",
+  {
+    description:
+      "Send a message to another project's inbox. Recipient session sees it via list_inbox on next session start. Requires PROJECTS_ROOT env. kinds (suggested): feature_request|api_change|help|pattern|reply|note. priority: urgent|high|normal|low (default normal). Use refId to thread related messages.",
+    inputSchema: {
+      to: z.string(),
+      kind: z.string(),
+      sender: z.string().optional(),
+      priority: z.string().optional(),
+      refType: z.string().optional(),
+      refId: z.string().optional(),
+      content: z.string().optional(),
+    },
+  },
+  async ({ to, kind, sender, priority, refType, refId, content }) => {
+    try {
+      const recipientDevlog = state.resolveExternalDevlog(to);
+      const senderProject = sender ?? state.currentProject;
+      if (!senderProject) {
+        throw new Error(
+          "Could not determine sender project. Pass 'sender' arg or set CODETRAIL_PROJECT env."
+        );
+      }
+      const id = recipientDevlog.sendInboxMessage(
+        senderProject,
+        to,
+        kind,
+        priority ?? "normal",
+        refType ?? null,
+        refId ?? null,
+        content ?? null
+      );
+      return textResult({ id, to, sender: senderProject });
+    } catch (e) {
+      return errResult(e);
+    }
+  }
+);
+
+server.registerTool(
+  "list_inbox",
+  {
+    description:
+      "List inbox messages for a project (defaults to current project). Filter by status (unread|read|resolved) and/or sender. Ordered by priority (urgent first), newest first within same priority.",
+    inputSchema: {
+      project: z.string().optional(),
+      status: z.string().optional(),
+      sender: z.string().optional(),
+      limit: z.number().int().optional(),
+    },
+  },
+  async ({ project, status, sender, limit }) => {
+    try {
+      const dv = state.resolveInboxDevlog(project);
+      return textResult(
+        dv.listInbox(status ?? null, sender ?? null, limit ?? 50)
+      );
+    } catch (e) {
+      return errResult(e);
+    }
+  }
+);
+
+server.registerTool(
+  "mark_resolved",
+  {
+    description:
+      "Mark an inbox message as resolved. resolution is a one-line note about how it was handled (e.g., 'shipped in commit abc123'). Optionally pass project to act on another project's inbox.",
+    inputSchema: {
+      inboxId: z.number().int(),
+      resolution: z.string().optional(),
+      resolvedBy: z.string().optional(),
+      project: z.string().optional(),
+    },
+  },
+  async ({ inboxId, resolution, resolvedBy, project }) => {
+    try {
+      const dv = state.resolveInboxDevlog(project);
+      const by = resolvedBy ?? state.currentProject ?? "unknown";
+      const ok = dv.markInboxResolved(inboxId, by, resolution ?? null);
+      return textResult({ id: inboxId, resolved: ok, resolvedBy: by });
+    } catch (e) {
+      return errResult(e);
+    }
+  }
+);
+
+server.registerTool(
+  "get_thread",
+  {
+    description:
+      "Get all inbox messages sharing the same refId (a conversation thread). Optionally filter by refType. Returns rows in ID order (oldest first).",
+    inputSchema: {
+      refId: z.string(),
+      refType: z.string().optional(),
+      project: z.string().optional(),
+    },
+  },
+  async ({ refId, refType, project }) => {
+    try {
+      const dv = state.resolveInboxDevlog(project);
+      return textResult(dv.getInboxThread(refType ?? null, refId));
     } catch (e) {
       return errResult(e);
     }
