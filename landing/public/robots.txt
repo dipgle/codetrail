@@ -1,0 +1,6 @@
+User-agent: *
+Allow: /
+Disallow: /demo-devlog.sqlite
+Disallow: /demo-devlog.json
+
+Sitemap: https://codetrail.dipgle.com/sitemap.xml
