@@ -3,7 +3,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Live](https://img.shields.io/badge/live-codetrail.dipgle.com-6ee7b7?logo=icloud)](https://codetrail.dipgle.com/)
 [![Status](https://img.shields.io/badge/status-open%20beta-blue)](https://codetrail.dipgle.com/#waitlist)
-[![Stack](https://img.shields.io/badge/stack-Rust%20%2B%20JS%20%2B%20sql.js-orange)](#)
+[![Stack](https://img.shields.io/badge/stack-Node%20%2B%20Rust%20%2B%20sql.js-orange)](#)
 
 > **Persistent memory for AI coding sessions.** Auto-logging devlog, UC/TC tracking, stale-resume warnings. Stop losing context between Claude Code sessions.
 
@@ -51,34 +51,34 @@ adopt
 | Local-first | ✓ | hybrid | ✓ | cloud |
 | Setup time | ~30s | ~5min | ~1min | ~10min |
 
-## Pricing
+## Open core
 
-Pricing for cloud sync (Pro / Team tiers) has not been finalized; nothing is committed yet. The free tier (everything in this repo + the OSS hooks) will stay free regardless. Drop your email on the waitlist to be notified when paid tiers open.
+The local-first tool is fully open source under MIT. Future paid tiers cover
+cloud sync, multi-project dashboard, and team collaboration — none of which
+exist yet. Local devlog, hooks, and MCP server stay free forever.
 
 ## Status
 
-🟡 **Open alpha** as of 2026-06-02. What ships today:
+🟡 **Open alpha** as of 2026-06-04. What ships today:
 
 - ✅ Landing + viewer at https://codetrail.dipgle.com/
-- ✅ OSS scaffolder, hooks, and SQLite devlog schema (this repo)
-- ⏳ MCP server binary (`project-agent`) is closed source; a hosted binary download is **on the roadmap** — not yet available
-- ⏳ Cloud sync, dashboard, multi-project search — planned
+- ✅ Project scaffolder, hooks, and SQLite devlog schema (`template/`, `hooks/`)
+- ✅ MCP server — two implementations, both open source MIT:
+  - `mcp/project-agent-node/` — cross-platform default (Node 20+)
+  - `mcp/project-agent-rs/` — faster alternative for advanced users (Rust)
+- ⏳ Cloud sync, dashboard, multi-project search — planned (paid tiers, TBD)
 
-Until the MCP binary ships, the scaffolder + hooks still work standalone; query the devlog directly with `sqlite3 logs/devlog.sqlite`.
+## What's in this repo
 
-## What's open source
-
-This repo contains:
-
-- 🛠️ `template/` — the project scaffolder (CLAUDE.md, sqlite schema seeder)
+- 🛠️ `template/` — the project scaffolder (CLAUDE.md, sqlite schema seeder, `startup.sh`)
 - 🪝 `hooks/` — auto-artifact log + stale-resume-check hooks for Claude Code
+- 🧠 `mcp/project-agent-node/` — TypeScript MCP server (default)
+- 🦀 `mcp/project-agent-rs/` — Rust MCP server (faster, optional)
 - 🌐 `landing/` — the static site you see at codetrail.dipgle.com (+ deploy.mjs)
-
-The MCP server binary (`project-agent`) stays closed source. A hosted binary download is on the roadmap.
 
 ## License
 
-MIT for everything in this repo. Binary download has its own EULA (free Beta usage allowed).
+MIT for everything in this repo. No proprietary binary, no closed components.
 
 ## Contact
 

@@ -4,7 +4,8 @@
 # Usage:
 #   curl -fsSL https://codetrail.dipgle.com/install.txt | bash
 #
-# Requirements: macOS / Linux / WSL2 + git + (optional) Claude Code
+# Requirements: macOS / Linux / Windows (native or WSL2) + git + Node 20+
+#                + Claude Code
 #
 # This script:
 #   1. Clones github.com/dipgle/codetrail into ~/.codetrail (or git pulls if present)
@@ -14,14 +15,12 @@
 # What you get after install:
 #   - `np my-app`     scaffolds ~/Documents/projects/AI/my-app and opens Claude Code
 #   - `adopt`         scaffolds CLAUDE.md + docs/ + memory/ + logs/devlog.sqlite in pwd
+#   - mcp/            two MCP server implementations (open source, MIT):
+#                     project-agent-node/ — default, cross-platform (Node 20+)
+#                     project-agent-rs/   — optional, faster (Rust toolchain)
+#                     `startup.sh` auto-builds whichever toolchain is present.
 #   - hooks/          PostToolUse + SessionStart hooks (you copy to ~/.claude/hooks/
 #                     yourself; the installer does NOT touch ~/.claude/ globally)
-#
-# Known limitation (open beta): the MCP server binary that ties devlog to
-# Claude Code's tool layer is not yet bundled in this OSS repo. The
-# scaffolder will skip MCP registration with a clear notice. The hooks and
-# sqlite schema still work standalone — you can query devlog with sqlite3
-# directly. A hosted MCP binary download is on the roadmap.
 
 set -e
 

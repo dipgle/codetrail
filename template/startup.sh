@@ -8,11 +8,17 @@
 # The MCP server code stays in this template's /mcp folder (single source of
 # truth). Each project gets its own memory + logs by passing PROJECT_MEMORY_DIR
 # and PROJECT_LOG_DIR to the MCP server via `claude mcp add -e`.
+#
+# Two MCP implementations ship in this repo:
+#   - mcp/project-agent-node/ (default, cross-platform, requires Node 20+)
+#   - mcp/project-agent-rs/   (optional, faster, requires Rust toolchain)
+# Node is preferred when present. Override with CODETRAIL_MCP=rust.
 
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-MCP_DIR="$SCRIPT_DIR/mcp"
+REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+MCP_DIR="$REPO_ROOT/mcp"
 TEMPLATE_CLAUDE_MD="$SCRIPT_DIR/CLAUDE.md"
 TEMPLATE_DOCS_DIR="$SCRIPT_DIR/docs"
 
@@ -22,7 +28,7 @@ cd "$TARGET"
 PROJECT_DIR="$(pwd)"
 
 echo "Initializing project: $PROJECT_DIR"
-echo "Shared MCP:           $MCP_DIR"
+echo "Shared MCP root:      $MCP_DIR"
 
 # 1. Scaffold project knowledge structure
 mkdir -p docs memory logs
@@ -31,7 +37,6 @@ mkdir -p docs memory logs
 [ -f PLAN.md ]   || touch PLAN.md
 [ -f TODO.md ]   || touch TODO.md
 
-# Doc skeleton — copy templates if the template ships content, else create empty.
 for f in architecture.md conventions.md testing-knowledge.md decision-log.md \
          use-cases.md test-cases.md kickoff.md; do
     if [ ! -f "docs/$f" ]; then
@@ -118,7 +123,6 @@ SQL
     fi
 fi
 
-# .gitignore: keep the sqlite WAL/SHM out of git but keep the DB itself.
 if [ -f .gitignore ] && ! grep -q "logs/devlog.sqlite-" .gitignore; then
     {
         echo ""
@@ -128,31 +132,61 @@ if [ -f .gitignore ] && ! grep -q "logs/devlog.sqlite-" .gitignore; then
     } >> .gitignore
 fi
 
-# 3. MCP registration — optional, runs only if MCP source is bundled.
-#    The OSS distribution of this template does NOT ship the project-agent
-#    Rust source (closed-source moat per project README). When mcp/ is absent
-#    we still produce a usable scaffold: hooks + sqlite schema work
-#    standalone; you query the devlog with the `sqlite3` CLI.
+# 3. MCP registration — prefer Node, fall back to Rust.
 MCP_REGISTERED=0
-if [ -d "$MCP_DIR/project-agent-rs" ]; then
-    BINARY="$MCP_DIR/project-agent-rs/target/release/project-agent"
-    if [ ! -x "$BINARY" ]; then
-        echo "Building project-agent Rust binary (one-time, ~50s)..."
-        if (cd "$MCP_DIR/project-agent-rs" && cargo build --release); then
-            :
-        else
-            echo "WARN: cargo build failed. Install Rust (https://rustup.rs) to retry."
-            BINARY=""
-        fi
+MCP_NODE_DIR="$MCP_DIR/project-agent-node"
+MCP_NODE_DIST="$MCP_NODE_DIR/dist/server.js"
+MCP_RUST_BIN="$MCP_DIR/project-agent-rs/target/release/project-agent"
+
+choose_mcp() {
+    case "${CODETRAIL_MCP:-}" in
+        node) echo node; return ;;
+        rust) echo rust; return ;;
+    esac
+    if [ -d "$MCP_NODE_DIR" ] && command -v node >/dev/null 2>&1; then
+        echo node
+    elif [ -d "$MCP_DIR/project-agent-rs" ] && command -v cargo >/dev/null 2>&1; then
+        echo rust
+    else
+        echo none
     fi
-    if [ -n "$BINARY" ] && [ -x "$BINARY" ] && command -v claude >/dev/null 2>&1; then
-        claude mcp add project-agent \
-            -s project \
-            -e PROJECT_MEMORY_DIR="$PROJECT_DIR/memory" \
-            -e PROJECT_LOG_DIR="$PROJECT_DIR/logs" \
-            -- "$BINARY" && MCP_REGISTERED=1
-    fi
-fi
+}
+
+build_node() {
+    echo "Building Node MCP server (one-time, ~10s with prebuilt sqlite)..."
+    (cd "$MCP_NODE_DIR" && npm install --silent && npx tsc) >/dev/null 2>&1
+}
+
+build_rust() {
+    echo "Building project-agent Rust binary (one-time, ~50s)..."
+    (cd "$MCP_DIR/project-agent-rs" && cargo build --release --quiet) >/dev/null 2>&1
+}
+
+register_node() {
+    [ -f "$MCP_NODE_DIST" ] || build_node || return 1
+    command -v claude >/dev/null 2>&1 || return 1
+    claude mcp add project-agent \
+        -s project \
+        -e PROJECT_MEMORY_DIR="$PROJECT_DIR/memory" \
+        -e PROJECT_LOG_DIR="$PROJECT_DIR/logs" \
+        -- node "$MCP_NODE_DIST" && MCP_REGISTERED=1
+}
+
+register_rust() {
+    [ -x "$MCP_RUST_BIN" ] || build_rust || return 1
+    command -v claude >/dev/null 2>&1 || return 1
+    claude mcp add project-agent \
+        -s project \
+        -e PROJECT_MEMORY_DIR="$PROJECT_DIR/memory" \
+        -e PROJECT_LOG_DIR="$PROJECT_DIR/logs" \
+        -- "$MCP_RUST_BIN" && MCP_REGISTERED=1
+}
+
+case "$(choose_mcp)" in
+    node) register_node || true ;;
+    rust) register_rust || true ;;
+    none) echo "WARN: no MCP implementation available. Install Node 20+ or Rust." ;;
+esac
 
 echo ""
 echo "✅ Project scaffolded at: $PROJECT_DIR"
@@ -162,10 +196,8 @@ if [ "$MCP_REGISTERED" -eq 1 ]; then
     echo "   MCP config: $PROJECT_DIR/.mcp.json"
 else
     echo ""
-    echo "ℹ  MCP server not registered (binary source not bundled in this"
-    echo "   distribution). The scaffold and hooks still work; query the"
-    echo "   devlog directly with: sqlite3 \"$PROJECT_DIR/logs/devlog.sqlite\""
-    echo "   Hosted MCP binary download is on the roadmap."
+    echo "ℹ  MCP server not registered. Hooks + sqlite still work standalone;"
+    echo "   query devlog with: sqlite3 \"$PROJECT_DIR/logs/devlog.sqlite\""
 fi
 echo ""
 echo "▶ Next step — open Claude in the new project to start discovery dialog:"

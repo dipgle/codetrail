@@ -1,0 +1,35 @@
+{
+  "name": "@codetrail/project-agent",
+  "version": "0.1.0",
+  "description": "MCP server: devlog + UC/TC tracking + project routing (open source, MIT)",
+  "license": "MIT",
+  "type": "module",
+  "bin": {
+    "project-agent": "dist/server.js"
+  },
+  "main": "dist/server.js",
+  "files": [
+    "dist/",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/server.js",
+    "dev": "tsc --watch",
+    "smoke": "node scripts/smoke.mjs"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "better-sqlite3": "^12.10.0",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.11",
+    "@types/node": "^22.0.0",
+    "typescript": "^5.6.0"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
