@@ -201,13 +201,36 @@ function initTabs() {
   });
 }
 
-async function loadDemoFromUrl(url) {
+function b64ToBytes(b64) {
+  const bin = atob(b64);
+  const out = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+  return out;
+}
+
+async function fetchDemoBytes() {
+  // Prefer raw .sqlite (post-Batch 85.7 cell-default behavior).
+  // Fall back to .json b64 wrapper for pre-85.7 cells where .sqlite is rejected by upload whitelist.
+  const sqliteResp = await fetch("/demo-devlog.sqlite");
+  if (sqliteResp.ok) {
+    return new Uint8Array(await sqliteResp.arrayBuffer());
+  }
+  const jsonResp = await fetch("/demo-devlog.json");
+  if (!jsonResp.ok) {
+    throw new Error(`No demo available (sqlite ${sqliteResp.status}, json ${jsonResp.status})`);
+  }
+  const wrapper = await jsonResp.json();
+  if (!wrapper || wrapper.format !== "sqlite-b64" || typeof wrapper.data !== "string") {
+    throw new Error("Demo JSON malformed");
+  }
+  return b64ToBytes(wrapper.data);
+}
+
+async function loadDemo() {
   const status = document.getElementById("dropStatus");
   if (status) status.textContent = `Loading demo…`;
   try {
-    const resp = await fetch(url);
-    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-    const bytes = new Uint8Array(await resp.arrayBuffer());
+    const bytes = await fetchDemoBytes();
     const SQL = await ensureSql();
     if (DB) { DB.close(); DB = null; }
     DB = new SQL.Database(bytes);
@@ -225,7 +248,7 @@ document.addEventListener("DOMContentLoaded", () => {
   initTabs();
   const params = new URLSearchParams(location.search);
   if (params.get("demo") === "1") {
-    loadDemoFromUrl("/demo-devlog.sqlite");
+    loadDemo();
   }
 });
 
