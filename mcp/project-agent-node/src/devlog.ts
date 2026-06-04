@@ -180,6 +180,13 @@ export interface Health {
   warnings: string[];
 }
 
+export interface InboxDigest {
+  unread_count: number;
+  by_priority: { urgent: number; high: number; normal: number; low: number };
+  top_unread: InboxRow[];
+  recent_resolved: InboxRow[];
+}
+
 export interface ContextBrief {
   summary: string;
   active_ucs: UseCaseRow[];
@@ -188,6 +195,7 @@ export interface ContextBrief {
   untested_tcs: TcLite[];
   recent_decisions: EventRow[];
   last_session: SessionRow | null;
+  inbox: InboxDigest;
 }
 
 export interface NextTcFull {
@@ -506,7 +514,10 @@ export class Devlog {
     const active_ucs = this.listUseCases("active");
     const recent_decisions = this.recentEvents(10, "decision");
     const last_session = this.lastSession();
-    const summary = `${active_ucs.length} active UCs · ${health.warnings.length} warnings · ${health.failing_tcs.length} failing tests`;
+    const inbox = this.inboxDigest();
+    const inboxPart =
+      inbox.unread_count > 0 ? ` · ${inbox.unread_count} unread inbox` : "";
+    const summary = `${active_ucs.length} active UCs · ${health.warnings.length} warnings · ${health.failing_tcs.length} failing tests${inboxPart}`;
     return {
       summary,
       active_ucs,
@@ -515,6 +526,34 @@ export class Devlog {
       untested_tcs: health.untested_tcs,
       recent_decisions,
       last_session,
+      inbox,
+    };
+  }
+
+  private inboxDigest(): InboxDigest {
+    const top_unread = this.listInbox("unread", null, 5);
+    const all_unread = this.listInbox("unread", null, 1000);
+    const by_priority = { urgent: 0, high: 0, normal: 0, low: 0 };
+    for (const m of all_unread) {
+      if (m.priority in by_priority) {
+        by_priority[m.priority as keyof typeof by_priority]++;
+      }
+    }
+    const recent_resolved = this.db
+      .prepare(
+        `SELECT id, ts, sender_project, recipient_project, kind, priority,
+                ref_type, ref_id, content, status, resolved_ts, resolved_by, resolution
+         FROM inbox
+         WHERE status = 'resolved'
+           AND julianday(resolved_ts) > julianday('now', '-1 day')
+         ORDER BY resolved_ts DESC LIMIT 10`
+      )
+      .all() as InboxRow[];
+    return {
+      unread_count: all_unread.length,
+      by_priority,
+      top_unread,
+      recent_resolved,
     };
   }
 

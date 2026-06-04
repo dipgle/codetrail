@@ -287,6 +287,55 @@ try {
       resolvedList.some((m) => m.ref_id === "GAP-X" && m.resolution === "shipped abc123"),
     JSON.stringify(resolvedList)
   );
+
+  // --- L3: get_context_brief surfaces inbox digest ---
+  // Send another unread message to sender so its brief has something to surface.
+  await rpc("tools/call", {
+    name: "send_message",
+    arguments: {
+      sender: receiverName,
+      to: senderName,
+      kind: "help",
+      priority: "urgent",
+      content: "Need a hand with the deploy",
+    },
+  });
+
+  const briefSenderResp = await rpc("tools/call", {
+    name: "get_context_brief",
+    arguments: {},
+  });
+  const briefSender = parseText(briefSenderResp);
+  check(
+    "get_context_brief(sender) summary mentions unread inbox",
+    typeof briefSender?.summary === "string" &&
+      briefSender.summary.includes("unread inbox"),
+    JSON.stringify(briefSender?.summary)
+  );
+  check(
+    "get_context_brief(sender) inbox.unread_count matches",
+    briefSender?.inbox?.unread_count === 2 &&
+      briefSender.inbox.by_priority?.urgent === 1,
+    JSON.stringify(briefSender?.inbox?.by_priority)
+  );
+  check(
+    "get_context_brief(sender) top_unread surfaces the urgent message",
+    Array.isArray(briefSender?.inbox?.top_unread) &&
+      briefSender.inbox.top_unread.some((m) => m.priority === "urgent"),
+    `got ${briefSender?.inbox?.top_unread?.length} top_unread`
+  );
+
+  const briefReceiverResp = await rpc("tools/call", {
+    name: "get_context_brief",
+    arguments: { project: receiverName },
+  });
+  const briefReceiver = parseText(briefReceiverResp);
+  check(
+    "get_context_brief(receiver) recent_resolved surfaces the resolved message",
+    Array.isArray(briefReceiver?.inbox?.recent_resolved) &&
+      briefReceiver.inbox.recent_resolved.some((m) => m.ref_id === "GAP-X"),
+    `got ${briefReceiver?.inbox?.recent_resolved?.length} recent_resolved`
+  );
 } finally {
   proc.kill("SIGTERM");
   rmSync(root, { recursive: true, force: true });

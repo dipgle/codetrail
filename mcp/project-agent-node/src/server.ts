@@ -416,14 +416,14 @@ server.registerTool(
   "get_context_brief",
   {
     description:
-      "Single call at session start: active UCs + health warnings + failing tests + recent decisions.",
+      "Single call at session start: active UCs + health warnings + failing tests + recent decisions + inbox digest. Pass `project` to peek at another adopted project's status.",
     inputSchema: {
       project: z.string().optional(),
     },
   },
   async ({ project }) => {
     try {
-      const dv = state.resolveDevlog(project);
+      const dv = state.resolveInboxDevlog(project);
       return textResult(dv.getContextBrief());
     } catch (e) {
       return errResult(e);

@@ -480,11 +480,18 @@ impl Devlog {
         let active_ucs = self.list_use_cases(Some("active"))?;
         let recent_decisions = self.recent_events(10, Some("decision"))?;
         let last_session: Option<Session> = self.last_session()?;
+        let inbox = self.inbox_digest()?;
+        let inbox_part = if inbox.unread_count > 0 {
+            format!(" · {} unread inbox", inbox.unread_count)
+        } else {
+            String::new()
+        };
         let summary = format!(
-            "{} active UCs · {} warnings · {} failing tests",
+            "{} active UCs · {} warnings · {} failing tests{}",
             active_ucs.len(),
             health.warnings.len(),
-            health.failing_tcs.len()
+            health.failing_tcs.len(),
+            inbox_part
         );
         Ok(ContextBrief {
             summary,
@@ -494,6 +501,57 @@ impl Devlog {
             untested_tcs: health.untested_tcs.clone(),
             recent_decisions,
             last_session,
+            inbox,
+        })
+    }
+
+    fn inbox_digest(&self) -> Result<InboxDigest> {
+        let top_unread = self.list_inbox(Some("unread"), None, 5)?;
+        let all_unread = self.list_inbox(Some("unread"), None, 1000)?;
+        let mut by_priority = InboxByPriority::default();
+        for m in &all_unread {
+            match m.priority.as_str() {
+                "urgent" => by_priority.urgent += 1,
+                "high" => by_priority.high += 1,
+                "normal" => by_priority.normal += 1,
+                "low" => by_priority.low += 1,
+                _ => {}
+            }
+        }
+        let conn = self.conn.lock().unwrap();
+        let mut stmt = conn.prepare(
+            "SELECT id, ts, sender_project, recipient_project, kind, priority,
+                    ref_type, ref_id, content, status, resolved_ts, resolved_by, resolution
+             FROM inbox
+             WHERE status = 'resolved'
+               AND julianday(resolved_ts) > julianday('now', '-1 day')
+             ORDER BY resolved_ts DESC LIMIT 10",
+        )?;
+        let map = |row: &rusqlite::Row| -> rusqlite::Result<InboxRow> {
+            Ok(InboxRow {
+                id: row.get(0)?,
+                ts: row.get(1)?,
+                sender_project: row.get(2)?,
+                recipient_project: row.get(3)?,
+                kind: row.get(4)?,
+                priority: row.get(5)?,
+                ref_type: row.get(6)?,
+                ref_id: row.get(7)?,
+                content: row.get(8)?,
+                status: row.get(9)?,
+                resolved_ts: row.get(10)?,
+                resolved_by: row.get(11)?,
+                resolution: row.get(12)?,
+            })
+        };
+        let recent_resolved: Vec<InboxRow> = stmt
+            .query_map([], map)?
+            .collect::<Result<Vec<_>, _>>()?;
+        Ok(InboxDigest {
+            unread_count: all_unread.len() as i64,
+            by_priority,
+            top_unread,
+            recent_resolved,
         })
     }
 
@@ -873,6 +931,22 @@ pub struct Health {
     pub warnings: Vec<String>,
 }
 
+#[derive(Debug, Serialize, Default)]
+pub struct InboxByPriority {
+    pub urgent: i64,
+    pub high: i64,
+    pub normal: i64,
+    pub low: i64,
+}
+
+#[derive(Debug, Serialize)]
+pub struct InboxDigest {
+    pub unread_count: i64,
+    pub by_priority: InboxByPriority,
+    pub top_unread: Vec<InboxRow>,
+    pub recent_resolved: Vec<InboxRow>,
+}
+
 #[derive(Debug, Serialize)]
 pub struct ContextBrief {
     pub summary: String,
@@ -882,6 +956,7 @@ pub struct ContextBrief {
     pub untested_tcs: Vec<TcLite>,
     pub recent_decisions: Vec<Event>,
     pub last_session: Option<Session>,
+    pub inbox: InboxDigest,
 }
 
 #[derive(Debug, Serialize, Clone)]

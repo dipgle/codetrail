@@ -493,9 +493,9 @@ impl ProjectAgent {
         }
     }
 
-    #[tool(description = "Single call at session start: active UCs + health warnings + failing tests + recent decisions.")]
+    #[tool(description = "Single call at session start: active UCs + health warnings + failing tests + recent decisions + inbox digest. Pass `project` to peek at another adopted project's status.")]
     fn get_context_brief(&self, Parameters(p): Parameters<ProjectOnlyParams>) -> String {
-        let dv = match self.state.resolve_devlog(p.project) {
+        let dv = match self.state.resolve_inbox_devlog(p.project.as_deref()) {
             Ok(dv) => dv,
             Err(e) => return jerr(e),
         };
