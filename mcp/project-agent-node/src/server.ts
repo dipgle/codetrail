@@ -20,6 +20,7 @@ import {
 import { dirname, join, resolve } from "node:path";
 
 import { Devlog } from "./devlog.js";
+import { ProjectGraph } from "./graph.js";
 
 // --- State -----------------------------------------------------------------
 
@@ -30,6 +31,7 @@ class State {
   private cache = new Map<string, Devlog>();
   readonly memoryDir: string;
   readonly currentProject: string | null;
+  readonly graph: ProjectGraph | null;
 
   constructor() {
     const root = process.env.PROJECTS_ROOT;
@@ -56,6 +58,8 @@ class State {
     this.currentProject =
       process.env.CODETRAIL_PROJECT ??
       this.deriveProjectName(this.memoryDir, this.projectsRoot);
+
+    this.graph = this.projectsRoot ? new ProjectGraph(this.projectsRoot) : null;
   }
 
   private deriveProjectName(
@@ -573,6 +577,112 @@ server.registerTool(
     try {
       const dv = state.resolveInboxDevlog(project);
       return textResult(dv.getInboxThread(refType ?? null, refId));
+    } catch (e) {
+      return errResult(e);
+    }
+  }
+);
+
+// --- L4 broadcast: fan out to dependents via PROJECTS_GRAPH.yaml ----------
+
+server.registerTool(
+  "list_dependents",
+  {
+    description:
+      "List projects that depend on the given project (its downstream — broadcast targets). Reads PROJECTS_GRAPH.yaml at workspace root.",
+    inputSchema: {
+      project: z.string().optional(),
+    },
+  },
+  async ({ project }) => {
+    try {
+      if (!state.graph) {
+        throw new Error("PROJECTS_ROOT not set — no graph available");
+      }
+      const target = project ?? state.currentProject;
+      if (!target) {
+        throw new Error(
+          "No project specified and no current project derivable. Pass 'project' or set CODETRAIL_PROJECT."
+        );
+      }
+      return textResult({ project: target, dependents: state.graph.listDependents(target) });
+    } catch (e) {
+      return errResult(e);
+    }
+  }
+);
+
+server.registerTool(
+  "list_dependencies",
+  {
+    description:
+      "List projects the given project depends on (its upstream). Reads PROJECTS_GRAPH.yaml at workspace root.",
+    inputSchema: {
+      project: z.string().optional(),
+    },
+  },
+  async ({ project }) => {
+    try {
+      if (!state.graph) {
+        throw new Error("PROJECTS_ROOT not set — no graph available");
+      }
+      const target = project ?? state.currentProject;
+      if (!target) {
+        throw new Error("No project specified and no current project derivable");
+      }
+      return textResult({ project: target, dependencies: state.graph.listDependencies(target) });
+    } catch (e) {
+      return errResult(e);
+    }
+  }
+);
+
+server.registerTool(
+  "broadcast_to_dependents",
+  {
+    description:
+      "Send the same message to every dependent project's inbox. Sender = current project (or override via `sender`). Returns the list of inbox IDs created per recipient. Use this for API changes, deprecations, breaking-change announcements.",
+    inputSchema: {
+      kind: z.string(),
+      sender: z.string().optional(),
+      priority: z.string().optional(),
+      refType: z.string().optional(),
+      refId: z.string().optional(),
+      content: z.string().optional(),
+    },
+  },
+  async ({ kind, sender, priority, refType, refId, content }) => {
+    try {
+      if (!state.graph) {
+        throw new Error("PROJECTS_ROOT not set — no graph available");
+      }
+      const senderProject = sender ?? state.currentProject;
+      if (!senderProject) {
+        throw new Error(
+          "Could not determine sender project. Pass 'sender' or set CODETRAIL_PROJECT."
+        );
+      }
+      const dependents = state.graph.listDependents(senderProject);
+      const results: Array<{ recipient: string; inbox_id?: number; error?: string }> = [];
+      for (const recipient of dependents) {
+        try {
+          const dv = state.resolveExternalDevlog(recipient);
+          const id = dv.sendInboxMessage(
+            senderProject,
+            recipient,
+            kind,
+            priority ?? "normal",
+            refType ?? null,
+            refId ?? null,
+            content ?? null
+          );
+          results.push({ recipient, inbox_id: id });
+        } catch (e) {
+          const msg = e instanceof Error ? e.message : String(e);
+          results.push({ recipient, error: msg });
+        }
+      }
+      return textResult({ sender: senderProject, fanout: results });
     } catch (e) {
       return errResult(e);
     }

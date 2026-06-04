@@ -7,7 +7,7 @@
 // resolved, and fetches the thread.
 
 import { spawn } from "node:child_process";
-import { mkdirSync, mkdtempSync, rmSync } from "node:fs";
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -20,18 +20,30 @@ const root = mkdtempSync(join(tmpdir(), "codetrail-smoke-"));
 const aiDir = join(root, "AI");
 const senderName = "sender-app";
 const receiverName = "receiver-app";
+const consumerName = "consumer-app";  // 3rd project — second dependent of sender for broadcast test
 const senderDir = join(aiDir, senderName);
 const receiverDir = join(aiDir, receiverName);
+const consumerDir = join(aiDir, consumerName);
 
 // Pre-seed each project's logs dir + an empty devlog so resolveExternalDevlog
 // finds them (server will create schema on first open).
-for (const dir of [senderDir, receiverDir]) {
+for (const dir of [senderDir, receiverDir, consumerDir]) {
   mkdirSync(join(dir, "logs"), { recursive: true });
   mkdirSync(join(dir, "memory"), { recursive: true });
   // touch sqlite with empty schema so file exists
   const db = new Database(join(dir, "logs", "devlog.sqlite"));
   db.close();
 }
+
+// Pre-seed PROJECTS_GRAPH.yaml at workspace root for L4 broadcast tests.
+writeFileSync(join(root, "PROJECTS_GRAPH.yaml"), `projects:
+  ${senderName}:
+    depends_on: []
+  ${receiverName}:
+    depends_on: [${senderName}]
+  ${consumerName}:
+    depends_on: [${senderName}]
+`);
 
 const env = {
   ...process.env,
@@ -130,10 +142,13 @@ try {
   const names = (tools?.result?.tools ?? []).map((t) => t.name).sort();
   const expected = [
     "add_knowledge",
+    "broadcast_to_dependents",
     "create_test_case",
     "create_use_case",
     "get_context_brief",
     "get_thread",
+    "list_dependencies",
+    "list_dependents",
     "list_inbox",
     "list_projects",
     "list_test_cases",
@@ -149,7 +164,7 @@ try {
     "send_message",
   ];
   check(
-    `tools/list returns 18 expected tools (got ${names.length})`,
+    `tools/list returns 21 expected tools (got ${names.length})`,
     JSON.stringify(names) === JSON.stringify(expected),
     `got: ${JSON.stringify(names)}`
   );
@@ -336,6 +351,73 @@ try {
       briefReceiver.inbox.recent_resolved.some((m) => m.ref_id === "GAP-X"),
     `got ${briefReceiver?.inbox?.recent_resolved?.length} recent_resolved`
   );
+
+  // --- L4: dependency graph + broadcast ---
+  const depResp = await rpc("tools/call", {
+    name: "list_dependents",
+    arguments: { project: senderName },
+  });
+  const depRes = parseText(depResp);
+  check(
+    "list_dependents(sender) returns 2 dependents (receiver + consumer)",
+    Array.isArray(depRes?.dependents) &&
+      depRes.dependents.length === 2 &&
+      depRes.dependents.includes(receiverName) &&
+      depRes.dependents.includes(consumerName),
+    JSON.stringify(depRes?.dependents)
+  );
+
+  const upResp = await rpc("tools/call", {
+    name: "list_dependencies",
+    arguments: { project: receiverName },
+  });
+  const upRes = parseText(upResp);
+  check(
+    "list_dependencies(receiver) returns [sender]",
+    Array.isArray(upRes?.dependencies) &&
+      upRes.dependencies.length === 1 &&
+      upRes.dependencies[0] === senderName,
+    JSON.stringify(upRes?.dependencies)
+  );
+
+  const bcastResp = await rpc("tools/call", {
+    name: "broadcast_to_dependents",
+    arguments: {
+      kind: "api_change",
+      priority: "high",
+      refType: "break",
+      refId: "BREAK-1",
+      content: "/foo endpoint moved to /v2/foo",
+    },
+  });
+  const bcastRes = parseText(bcastResp);
+  check(
+    "broadcast_to_dependents fanned out to 2 recipients with inbox_ids",
+    Array.isArray(bcastRes?.fanout) &&
+      bcastRes.fanout.length === 2 &&
+      bcastRes.fanout.every((r) => typeof r.inbox_id === "number"),
+    JSON.stringify(bcastRes?.fanout)
+  );
+
+  for (const dep of [receiverName, consumerName]) {
+    const lr = await rpc("tools/call", {
+      name: "list_inbox",
+      arguments: { project: dep, status: "unread" },
+    });
+    const inb = parseText(lr);
+    check(
+      `${dep} inbox received the broadcast (refId=BREAK-1)`,
+      Array.isArray(inb) &&
+        inb.some(
+          (m) =>
+            m.ref_id === "BREAK-1" &&
+            m.kind === "api_change" &&
+            m.sender_project === senderName &&
+            m.priority === "high"
+        ),
+      `${dep}: got ${inb?.length ?? 0} unread`
+    );
+  }
 } finally {
   proc.kill("SIGTERM");
   rmSync(root, { recursive: true, force: true });

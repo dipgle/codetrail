@@ -19,7 +19,9 @@ use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 
 mod devlog;
+mod graph;
 use devlog::Devlog;
+use graph::ProjectGraph;
 
 // --- Param types ----------------------------------------------------------
 
@@ -147,6 +149,18 @@ struct GetThreadParams {
 }
 
 #[derive(Debug, Deserialize, schemars::JsonSchema)]
+struct BroadcastParams {
+    kind: String,
+    sender: Option<String>,
+    priority: Option<String>,
+    #[serde(rename = "refType")]
+    ref_type: Option<String>,
+    #[serde(rename = "refId")]
+    ref_id: Option<String>,
+    content: Option<String>,
+}
+
+#[derive(Debug, Deserialize, schemars::JsonSchema)]
 struct SaveMemoryParams {
     category: String,
     data: serde_json::Value,
@@ -171,6 +185,7 @@ struct State {
     devlog_cache: Mutex<HashMap<String, Arc<Devlog>>>,
     memory_dir: PathBuf,
     current_project: Option<String>,
+    graph: Option<ProjectGraph>,
 }
 
 impl State {
@@ -207,6 +222,8 @@ impl State {
             .ok()
             .or_else(|| Self::derive_project_name(&memory_dir));
 
+        let graph = projects_root.as_ref().map(|root| ProjectGraph::new(root));
+
         Ok(State {
             router_mode,
             projects_root,
@@ -214,6 +231,7 @@ impl State {
             devlog_cache: Mutex::new(HashMap::new()),
             memory_dir,
             current_project,
+            graph,
         })
     }
 
@@ -614,6 +632,101 @@ impl ProjectAgent {
             Ok(rows) => j(rows),
             Err(e) => jerr(e),
         }
+    }
+
+    // --- L4 broadcast: fan out via PROJECTS_GRAPH.yaml ---
+
+    #[tool(
+        description = "List projects that depend on the given project (its downstream — broadcast targets). Reads PROJECTS_GRAPH.yaml at workspace root."
+    )]
+    fn list_dependents(&self, Parameters(p): Parameters<ProjectOnlyParams>) -> String {
+        let graph = match &self.state.graph {
+            Some(g) => g,
+            None => return jerr("PROJECTS_ROOT not set — no graph available"),
+        };
+        let target = p.project.or_else(|| self.state.current_project.clone());
+        let target = match target {
+            Some(t) => t,
+            None => {
+                return jerr(
+                    "No project specified and no current project derivable. Pass 'project' or set CODETRAIL_PROJECT.",
+                )
+            }
+        };
+        let deps = graph.list_dependents(&target);
+        j(serde_json::json!({ "project": target, "dependents": deps }))
+    }
+
+    #[tool(
+        description = "List projects the given project depends on (its upstream). Reads PROJECTS_GRAPH.yaml at workspace root."
+    )]
+    fn list_dependencies(&self, Parameters(p): Parameters<ProjectOnlyParams>) -> String {
+        let graph = match &self.state.graph {
+            Some(g) => g,
+            None => return jerr("PROJECTS_ROOT not set — no graph available"),
+        };
+        let target = p.project.or_else(|| self.state.current_project.clone());
+        let target = match target {
+            Some(t) => t,
+            None => return jerr("No project specified and no current project derivable"),
+        };
+        let deps = graph.list_dependencies(&target);
+        j(serde_json::json!({ "project": target, "dependencies": deps }))
+    }
+
+    #[tool(
+        description = "Send the same message to every dependent project's inbox. Sender = current project (or override via `sender`). Returns the list of inbox IDs created per recipient. Use this for API changes, deprecations, breaking-change announcements."
+    )]
+    fn broadcast_to_dependents(&self, Parameters(p): Parameters<BroadcastParams>) -> String {
+        let graph = match &self.state.graph {
+            Some(g) => g,
+            None => return jerr("PROJECTS_ROOT not set — no graph available"),
+        };
+        let sender_project = match p.sender.or_else(|| self.state.current_project.clone()) {
+            Some(s) => s,
+            None => {
+                return jerr(
+                    "Could not determine sender project. Pass 'sender' or set CODETRAIL_PROJECT.",
+                )
+            }
+        };
+        let dependents = graph.list_dependents(&sender_project);
+        let priority = p.priority.as_deref().unwrap_or("normal");
+        let mut results = Vec::new();
+        for recipient in &dependents {
+            let dv = match self.state.resolve_external_devlog(recipient) {
+                Ok(dv) => dv,
+                Err(e) => {
+                    results.push(serde_json::json!({
+                        "recipient": recipient,
+                        "error": e.to_string()
+                    }));
+                    continue;
+                }
+            };
+            match dv.send_inbox_message(
+                &sender_project,
+                recipient,
+                &p.kind,
+                priority,
+                p.ref_type.as_deref(),
+                p.ref_id.as_deref(),
+                p.content.as_deref(),
+            ) {
+                Ok(id) => results.push(serde_json::json!({
+                    "recipient": recipient,
+                    "inbox_id": id
+                })),
+                Err(e) => results.push(serde_json::json!({
+                    "recipient": recipient,
+                    "error": e.to_string()
+                })),
+            }
+        }
+        j(serde_json::json!({
+            "sender": sender_project,
+            "fanout": results
+        }))
     }
 
     // --- Memory / knowledge (workspace mode only — file-based) ---
