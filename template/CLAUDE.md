@@ -123,6 +123,80 @@ HARD RULES (non-negotiable, project-template baseline)
      d. Refactor only with the test suite still green; log significant
         decisions via `log_event kind=decision`.
 
+6. REVIEW VISUAL ARTIFACTS BEFORE REPORTING DONE
+   Any visual deliverable — SVG, HTML/CSS layout, ASCII diagram, PDF,
+   slide, UI mockup — must be rendered AND section-by-section inspected
+   before being declared complete. Compile-pass ≠ visually correct.
+   Coordinate math on paper is invisible to 5–15px errors that are
+   obvious on screen.
+
+   Mandatory workflow:
+     a. Render to raster.
+          SVG     → `qlmanage -t -s 3200 -o /tmp/ file.svg`
+          HTML    → headless browser screenshot (playwright/puppeteer)
+          other   → format-native preview tool
+     b. Strip render padding if any. qlmanage outputs N×N regardless of
+        source aspect ratio — content is centered with whitespace on the
+        long axis; crop padding off before splitting.
+     c. Split into 4–8 logical sections via Python + Pillow:
+          from PIL import Image
+          img = Image.open('/tmp/render.png')
+          for name, (l, t, r, b) in SECTIONS:
+              img.crop((l, t, r, b)).save(f'/tmp/audit-{name}.png')
+     d. Read each crop. Audit against source: text fits its container,
+        lines don't cross unrelated elements, declared colors actually
+        render, section headers don't collide, padding looks deliberate.
+     e. Document defects, fix, re-render, re-crop only the changed area,
+        verify. THEN report done.
+
+   Common bug classes:
+   - Text y-position > rect height → overflows box bottom. Default to
+     20px more padding than the math says is needed.
+   - Connector lines passing THROUGH unrelated boxes — use Bézier curves
+     arcing OVER, not straight lines that cut through siblings.
+   - CSS cascade order in SVG: utility colors (`.crimson`, `.cobalt`)
+     MUST be defined AFTER classes that also set `fill` (`.lbl-sm`,
+     `.code`), else the later class wins and the color is silently
+     swallowed. Multi-class resolves via cascade, not class-list
+     precedence — stylesheet order IS the API.
+   - Nested `<g transform>` adds offsets; container bounds do NOT
+     auto-expand to fit content.
+
+   When in doubt, render. Cost is one shell command; cost of shipping
+   broken visuals is user trust.
+
+7. CHOOSE DIAGRAM TYPE BY CONTENT
+   Wrong type beats good tool. Pick the primitive that matches the
+   content shape BEFORE drawing:
+
+   | Content shape                    | Type           | Tool       |
+   |----------------------------------|----------------|------------|
+   | Temporal protocol / lifecycle    | Sequence       | mermaid    |
+   | Entity + relationships           | ER             | mermaid/d2 |
+   | Module + dependency / topology   | Container      | d2         |
+   | State machine                    | State          | mermaid    |
+   | Pipeline / linear dataflow       | Flowchart (≤7) | mermaid    |
+   | Hierarchy / tree                 | Tree           | d2         |
+   | Plain structural facts           | PROSE          | none       |
+
+   Footgun: mermaid `flowchart` with nested subgraphs silently drops
+   subgraph borders when mixed direction or many cross-subgraph edges
+   trigger the layout bug. Use d2 for L2+ container views.
+
+   PROSE FIRST. If the content fits <5 sentences without information
+   loss, prose wins. Diagrams compete with prose; they don't auto-beat
+   it. ASCII art + numbered prose often beats a polished diagram for
+   protocol/lifecycle content (validated 7/10 vs 4–5/10 in head-to-head
+   audit on inbox flow).
+
+   ONE ACCENT, ENFORCED. Reserve color for ONE message-carrying element
+   per diagram. All other elements use border-only OR shape-only
+   semantic. A second color on a secondary edge makes the eye
+   pattern-match colors instead of read the message — the diagram
+   immediately drops 2–3 points in audit.
+
+   See HARD RULE #6 for the post-draw render-and-audit workflow.
+
 
 PROJECT KNOWLEDGE STRUCTURE
 
