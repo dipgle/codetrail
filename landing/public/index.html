@@ -30,7 +30,6 @@
     </a>
     <nav>
       <a href="/#features" data-i18n="nav.features">Features</a>
-      <a href="/#pricing" data-i18n="nav.pricing">Pricing</a>
       <a href="/viewer.html" data-i18n="nav.viewer">Viewer</a>
       <a href="/#waitlist" data-i18n="nav.waitlist">Waitlist</a>
       <button class="lang-toggle" id="langToggle" aria-label="Toggle language">EN / VI</button>
@@ -257,69 +256,12 @@ adopt</code></pre>
           <summary data-i18n="faq.q5">I already use Cursor / Aider — can I still use Codetrail?</summary>
           <p data-i18n="faq.a5">Codetrail's hooks are Claude Code-specific (they hook into Claude Code's PostToolUse / SessionStart events). The browser viewer is editor-agnostic — drop any compatible SQLite there. Aider and Cursor integrations aren't on the roadmap but the schema is documented; community PRs welcome.</p>
         </details>
-        <details>
-          <summary data-i18n="faq.q6">Pricing in VND?</summary>
-          <p data-i18n="faq.a6">Yes — Pro is ~225 000đ/month, Team ~725 000đ/user/month at current rates. We accept VietQR, MoMo, and bank transfer for Vietnamese customers, Stripe for everyone else. Annual billing saves 20% on both currencies.</p>
-        </details>
       </div>
     </section>
 
     <section class="pricing" id="pricing">
       <h2 data-i18n="price.title">Pricing</h2>
-      <p class="lede" data-i18n="price.lede">Free forever for solo work. Pay only when you sync across machines or share with a team.</p>
-      <div class="price-grid">
-        <article class="price-card">
-          <header>
-            <h3 data-i18n="price.free.name">Free</h3>
-            <div class="price"><span class="amount" data-i18n="price.free.amount">$0</span><span class="period" data-i18n="price.free.period">forever</span></div>
-            <p class="price-tag" data-i18n="price.free.tag">Solo dev, local-only</p>
-          </header>
-          <ul>
-            <li data-i18n="price.free.f1">Unlimited projects, local devlog</li>
-            <li data-i18n="price.free.f2">Auto-artifact hook + stale-resume warning</li>
-            <li data-i18n="price.free.f3">Browser viewer (drag-drop)</li>
-            <li data-i18n="price.free.f4">UC / TC / test_run tracking</li>
-            <li data-i18n="price.free.f5">Community support</li>
-          </ul>
-          <a class="btn ghost" href="#waitlist" data-i18n="price.free.cta">Get started</a>
-        </article>
-
-        <article class="price-card featured">
-          <div class="badge" data-i18n="price.pro.badge">Most popular</div>
-          <header>
-            <h3 data-i18n="price.pro.name">Pro</h3>
-            <div class="price"><span class="amount" data-i18n="price.pro.amount">$9</span><span class="period" data-i18n="price.pro.period">/ month</span></div>
-            <p class="price-tag" data-i18n="price.pro.tag">Sync across your machines</p>
-          </header>
-          <ul>
-            <li data-i18n="price.pro.f1"><strong>Everything in Free</strong>, plus:</li>
-            <li data-i18n="price.pro.f2">Cloud sync — 1 user, unlimited devices</li>
-            <li data-i18n="price.pro.f3">Cross-project search across all your devlogs</li>
-            <li data-i18n="price.pro.f4">Web dashboard (no upload needed)</li>
-            <li data-i18n="price.pro.f5">90-day history retention</li>
-            <li data-i18n="price.pro.f6">Priority email support</li>
-          </ul>
-          <a class="btn primary" href="#waitlist" data-i18n="price.pro.cta">Start Pro trial</a>
-        </article>
-
-        <article class="price-card">
-          <header>
-            <h3 data-i18n="price.team.name">Team</h3>
-            <div class="price"><span class="amount" data-i18n="price.team.amount">$29</span><span class="period" data-i18n="price.team.period">/ user / month</span></div>
-            <p class="price-tag" data-i18n="price.team.tag">Share AI memory across the team</p>
-          </header>
-          <ul>
-            <li data-i18n="price.team.f1"><strong>Everything in Pro</strong>, plus:</li>
-            <li data-i18n="price.team.f2">Multi-user with role-based access</li>
-            <li data-i18n="price.team.f3">Read-only share links (per project)</li>
-            <li data-i18n="price.team.f4">Audit log + SSO (SAML, OIDC)</li>
-            <li data-i18n="price.team.f5">1-year history retention</li>
-            <li data-i18n="price.team.f6">Slack + onboarding session</li>
-          </ul>
-          <a class="btn ghost" href="#waitlist" data-i18n="price.team.cta">Talk to us</a>
-        </article>
-      </div>
-      <p class="price-note" data-i18n="price.note">All paid plans start with a 14-day no-card trial. Annual billing saves 20%. Educational / open-source projects: Pro free — just email us.</p>
+      <p class="lede" data-i18n="price.lede">Codetrail is in open alpha. The free tier — local devlog, hooks, browser viewer, UC/TC tracking — is MIT-licensed and ships today. Pricing for cloud sync (Pro / Team tiers) is being finalized; nothing is committed yet. Join the waitlist below to be notified when paid tiers open.</p>
     </section>
 
     <section class="oss-cta">
@@ -336,7 +278,7 @@ adopt</code></pre>
 
     <section class="waitlist" id="waitlist">
       <h2 data-i18n="wait.title">Get early access</h2>
-      <p data-i18n="wait.lede">We're opening the beta to a small batch of Claude Code power users first. Drop your email and we'll send the install link.</p>
+      <p data-i18n="wait.lede">Codetrail is in open alpha. The free tier ships today (clone the repo or run the install script); the cloud-sync tier and the MCP binary download are still in progress. Drop your email and we'll send a note when paid tiers open.</p>
       <form class="wait-form" id="waitForm" method="POST" action="mailto:codetrail@dipgle.com" enctype="text/plain">
         <input type="email" name="email" required placeholder="you@example.com" data-i18n-attr="placeholder" data-i18n="wait.placeholder" />
         <button type="submit" class="btn primary" data-i18n="wait.submit">Notify me</button>
