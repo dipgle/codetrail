@@ -153,7 +153,7 @@ const I18N = {
     "about.principles.p4": "Reversible mistakes ship in minutes. Irreversible ones (pricing, legal, data deletion) wait 24 hours for advisor review. So far this has caught zero things, but it's the rule.",
     "about.principles.p5": "If Trace can't fix it, Trace says so. AI doesn't pretend to be human. AI doesn't fake testimonials. AI doesn't sign legal documents it can't enforce. Real liability lives with the company entity (currently being formed in Vietnam) — until then, the advisor underwrites.",
     "about.cta.h": "Want to be the first to use it?",
-    "about.cta.p": "The waitlist is the front door. Early signups get the install link first and a personal note when the beta opens. Pricing for the paid tier is still being finalized; nothing is committed yet.",
+    "about.cta.p": "The waitlist is the front door. Early signups get a personal note when the paid tier opens. Pricing for the paid tier is still being finalized; nothing is committed yet. The free tier (clone the repo or run install.txt) is available today.",
     "about.cta.btn": "Join the waitlist",
 
     "inst.title": "Install in 30 seconds",
@@ -174,7 +174,7 @@ const I18N = {
     "faq.q3": "What if Claude Code changes its hook API?",
     "faq.a3": "The hooks live in ~/.claude/settings.json and shell out to plain bash scripts that only depend on sqlite3 and Python 3. If the schema or matcher format changes, we ship an update — the migration is a one-line settings edit. The devlog format is independent and we'll always provide a converter.",
     "faq.q4": "Is the code open source?",
-    "faq.a4": "The hooks, landing, project template, and SDK clients are MIT — see github.com/dipgle/codetrail. The MCP server binary (project-agent) is closed source; the free tier always includes the hosted binary download under a permissive EULA.",
+    "faq.a4": "The hooks, landing, and project template are MIT — see github.com/dipgle/codetrail. The MCP server binary (project-agent) is closed source; a hosted binary download is on the roadmap. Until then the scaffolder and hooks work standalone — you query the devlog with the sqlite3 CLI.",
     "faq.q5": "I already use Cursor / Aider — can I still use Codetrail?",
     "faq.a5": "Codetrail's hooks are Claude Code-specific (they hook into Claude Code's PostToolUse / SessionStart events). The browser viewer is editor-agnostic — drop any compatible SQLite there. Aider and Cursor integrations aren't on the roadmap but the schema is documented; community PRs welcome.",
     "faq.q6": "Pricing in VND?",
@@ -190,7 +190,7 @@ const I18N = {
     "terms.intro": "By using Codetrail you agree to these terms. We've kept them short and human; if anything is unclear, email us — we'll explain or update the wording.",
     "terms.s1": "1. Use of Codetrail",
     "terms.s1p": "Codetrail provides hooks, a project scaffolder, an MCP server binary, and a web viewer that help you maintain persistent memory across AI coding sessions. The free tier — including all local-only features — is available to anyone without registration. Paid tiers (Pro, Team) require an account and payment.",
-    "terms.s2": "2. Beta status",
+    "terms.s2": "2. Alpha status",
     "terms.s2p": "Codetrail is in open alpha. APIs, file formats (including the devlog SQLite schema), pricing, and feature scope are expected to change. We will aim to warn you about breaking changes via the repository changelog with reasonable notice (target: 14 days where feasible), but we don't guarantee uptime, backwards compatibility, or any specific notice window during alpha.",
     "terms.s3": "3. Account & payment",
     "terms.s3p": "You are responsible for activity under your account. Keep your password secure; tell us at codetrail@dipgle.com within 72 hours if you suspect compromise. Paid plans are billed monthly or annually (your choice) in USD or VND; taxes are added where required by law. We don't charge for failed payments — your plan downgrades to Free after 14 days of unpaid balance, with email warnings before each step. Annual plans are refundable pro-rata within 30 days of payment if you haven't used cloud sync for more than 5 GB.",
@@ -219,7 +219,7 @@ const I18N = {
     "priv.s1": "1. Local-first by default",
     "priv.s1p": "If you only use the free tier of Codetrail (hooks, template, browser viewer), no data leaves your machine, ever. The viewer parses SQLite files entirely in your browser via WASM — there is no upload, no server round-trip. We literally cannot see your devlog.",
     "priv.s2": "2. What we collect on this website",
-    "priv.s2l1": "Email addresses you submit via the waitlist form, used only to email you when beta access opens. Stored until you ask us to delete or beta access has been delivered + 90 days.",
+    "priv.s2l1": "Email addresses you submit via the waitlist form, used only to email you when the paid tier opens. Stored until you ask us to delete or the invite has been delivered + 90 days.",
     "priv.s2l2": "Standard server logs (IP, user agent, requested path) retained 30 days for abuse prevention. Not used for advertising or product analytics.",
     "priv.s2l3": "No third-party analytics or trackers (no Google Analytics, no Facebook pixel, no fingerprinting).",
     "priv.s3": "3. Paid tiers (Pro, Team)",
@@ -436,7 +436,7 @@ const I18N = {
     "about.principles.p4": "Sai có thể sửa được ship trong vài phút. Sai không sửa được (giá, legal, xóa data) đợi cố vấn duyệt 24 giờ. Cho tới giờ rule này chưa catch gì, nhưng vẫn giữ.",
     "about.principles.p5": "Nếu Trace không fix được, Trace nói thẳng. AI không giả vờ là người. AI không fake testimonial. AI không ký giấy tờ pháp lý không enforce được. Trách nhiệm pháp lý thật nằm ở pháp nhân công ty (đang thành lập ở Việt Nam) — tới khi đó, cố vấn underwrite.",
     "about.cta.h": "Muốn là người đầu tiên dùng?",
-    "about.cta.p": "Waitlist là cửa chính. Người đăng ký sớm sẽ nhận link cài trước và ghi chú cá nhân khi beta mở. Giá cho gói trả phí đang được hoàn thiện; chưa cam kết gì.",
+    "about.cta.p": "Waitlist là cửa chính. Người đăng ký sớm sẽ nhận ghi chú cá nhân khi gói trả phí mở. Giá cho gói trả phí đang được hoàn thiện; chưa cam kết gì. Free tier (clone repo hoặc chạy install.txt) đã có hôm nay.",
     "about.cta.btn": "Đăng ký waitlist",
 
     "inst.title": "Cài trong 30 giây",
@@ -457,7 +457,7 @@ const I18N = {
     "faq.q3": "Nếu Claude Code đổi hook API thì sao?",
     "faq.a3": "Hook nằm trong ~/.claude/settings.json và gọi bash script chỉ phụ thuộc sqlite3 + Python 3. Nếu schema hay matcher đổi, chúng tôi ship update — migration chỉ 1 dòng settings. Format devlog độc lập và luôn có converter.",
     "faq.q4": "Có open source không?",
-    "faq.a4": "Hook, landing, project template, SDK clients đều MIT — xem github.com/dipgle/codetrail. MCP binary (project-agent) là closed source; free tier luôn được tải binary qua EULA permissive.",
+    "faq.a4": "Hook, landing, và project template đều MIT — xem github.com/dipgle/codetrail. MCP binary (project-agent) là closed source; hosted binary download nằm trong roadmap. Đến lúc đó, scaffolder và hooks chạy độc lập — bạn query devlog bằng sqlite3 CLI.",
     "faq.q5": "Tôi đang dùng Cursor / Aider — vẫn dùng Codetrail được không?",
     "faq.a5": "Hook của Codetrail Claude Code-specific (gắn vào PostToolUse / SessionStart của Claude Code). Browser viewer agnostic — thả SQLite tương thích vào. Integration Aider/Cursor chưa có trong roadmap nhưng schema đã document; community PR welcome.",
     "faq.q6": "Giá bằng VND?",
@@ -473,7 +473,7 @@ const I18N = {
     "terms.intro": "Khi sử dụng Codetrail bạn đồng ý với điều khoản này. Chúng tôi giữ ngắn gọn và dễ hiểu; nếu không rõ, email cho chúng tôi — chúng tôi giải thích hoặc sửa từ ngữ.",
     "terms.s1": "1. Sử dụng Codetrail",
     "terms.s1p": "Codetrail cung cấp hook, project scaffolder, MCP server binary, và web viewer giúp bạn duy trì memory bền vững giữa các phiên AI coding. Free tier — bao gồm mọi tính năng local-only — miễn phí cho mọi người, không cần đăng ký. Pro/Team yêu cầu tài khoản + thanh toán.",
-    "terms.s2": "2. Trạng thái beta",
+    "terms.s2": "2. Trạng thái alpha",
     "terms.s2p": "Codetrail đang ở open alpha. API, format file, giá, và phạm vi tính năng dự kiến sẽ thay đổi. Chúng tôi sẽ cố gắng cảnh báo breaking change qua repository changelog với thời gian báo trước hợp lý (mục tiêu: 14 ngày khi khả thi), nhưng không cam kết uptime, backwards compatibility, hay window notice cụ thể trong alpha.",
     "terms.s3": "3. Tài khoản & thanh toán",
     "terms.s3p": "Bạn chịu trách nhiệm cho mọi hoạt động dưới tài khoản. Giữ password bảo mật; báo codetrail@dipgle.com trong 72 giờ nếu nghi bị compromise. Gói trả phí thanh toán hàng tháng hoặc năm (tùy chọn) bằng USD hoặc VND; thuế cộng thêm theo luật. Chúng tôi không charge cho payment fail — gói downgrade về Free sau 14 ngày chưa thanh toán, có email cảnh báo trước. Gói năm hoàn tiền pro-rata trong 30 ngày nếu chưa dùng quá 5 GB cloud sync.",
@@ -502,7 +502,7 @@ const I18N = {
     "priv.s1": "1. Mặc định local-first",
     "priv.s1p": "Nếu bạn chỉ dùng free tier của Codetrail (hook, template, browser viewer), không có data nào rời máy bạn, không bao giờ. Viewer parse SQLite hoàn toàn trong browser qua WASM — không upload, không server. Chúng tôi đơn giản không thấy devlog của bạn.",
     "priv.s2": "2. Website này thu thập gì",
-    "priv.s2l1": "Email bạn gửi qua form waitlist, chỉ dùng để thông báo khi mở beta. Lưu cho đến khi bạn yêu cầu xóa hoặc đã gửi beta + 90 ngày.",
+    "priv.s2l1": "Email bạn gửi qua form waitlist, chỉ dùng để thông báo khi gói trả phí mở. Lưu cho đến khi bạn yêu cầu xóa hoặc đã gửi invite + 90 ngày.",
     "priv.s2l2": "Server log thường (IP, user agent, path) giữ 30 ngày để phòng abuse. Không dùng cho quảng cáo hoặc analytics sản phẩm.",
     "priv.s2l3": "Không analytics bên thứ 3, không tracker (không Google Analytics, không Facebook pixel, không fingerprinting).",
     "priv.s3": "3. Pro / Team tier",
@@ -623,8 +623,8 @@ function initWaitlist() {
     e.preventDefault();
     const lang = document.documentElement.dataset.lang || "en";
     const msg = lang === "vi"
-      ? "Đã nhận! Chúng tôi sẽ gửi email khi mở beta."
-      : "Got it. We'll email when the beta opens.";
+      ? "Đã nhận! Chúng tôi sẽ gửi email khi gói trả phí mở."
+      : "Got it. We'll email when the paid tier opens.";
     form.innerHTML = `<p style="color:var(--accent);font-weight:600">${msg}</p>
       <p class="wait-meta">${email}</p>`;
     // P1 wires this to a real waitlist endpoint.
