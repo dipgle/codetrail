@@ -53,26 +53,28 @@ adopt
 
 ## Pricing
 
-- **Free** — solo dev, local-only, all features
-- **Pro $9/mo** — cloud sync, cross-project search, web dashboard
-- **Team $29/user/mo** — multi-user, SSO, audit log
-
-14-day no-card trial on paid. Annual -20%. Education / OSS: Pro free.
+Pricing for cloud sync (Pro / Team tiers) has not been finalized; nothing is committed yet. The free tier (everything in this repo + the OSS hooks) will stay free regardless. Drop your email on the waitlist to be notified when paid tiers open.
 
 ## Status
 
-🟢 **Live in open beta** as of 2026-06-02. Currently building waitlist for cloud sync (Pro tier). Drop your email at https://codetrail.dipgle.com/#waitlist.
+🟡 **Open alpha** as of 2026-06-02. What ships today:
+
+- ✅ Landing + viewer at https://codetrail.dipgle.com/
+- ✅ OSS scaffolder, hooks, and SQLite devlog schema (this repo)
+- ⏳ MCP server binary (`project-agent`) is closed source; a hosted binary download is **on the roadmap** — not yet available
+- ⏳ Cloud sync, dashboard, multi-project search — planned
+
+Until the MCP binary ships, the scaffolder + hooks still work standalone; query the devlog directly with `sqlite3 logs/devlog.sqlite`.
 
 ## What's open source
 
-This repo will contain:
+This repo contains:
 
-- 🛠️ `template/` — the project scaffolder (CLAUDE.md, docs/, memory/, devlog schema)
+- 🛠️ `template/` — the project scaffolder (CLAUDE.md, sqlite schema seeder)
 - 🪝 `hooks/` — auto-artifact log + stale-resume-check hooks for Claude Code
-- 🌐 `landing/` — the static site you see at codetrail.dipgle.com
-- 🔍 `viewer/` — the sql.js-based browser viewer
+- 🌐 `landing/` — the static site you see at codetrail.dipgle.com (+ deploy.mjs)
 
-The **MCP server binary** (`project-agent`) is closed source. Free tier always available as a hosted binary download.
+The MCP server binary (`project-agent`) stays closed source. A hosted binary download is on the roadmap.
 
 ## License
 

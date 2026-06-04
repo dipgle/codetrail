@@ -128,30 +128,45 @@ if [ -f .gitignore ] && ! grep -q "logs/devlog.sqlite-" .gitignore; then
     } >> .gitignore
 fi
 
-# 3. Ensure Rust binary built (idempotent, ~50s one-time)
-BINARY="$MCP_DIR/project-agent-rs/target/release/project-agent"
-if [ ! -x "$BINARY" ]; then
-    echo "Building project-agent Rust binary (one-time, ~50s)..."
-    (cd "$MCP_DIR/project-agent-rs" && cargo build --release) || {
-        echo "ERROR: cargo build failed. Install Rust: https://rustup.rs"
-        exit 1
-    }
+# 3. MCP registration — optional, runs only if MCP source is bundled.
+#    The OSS distribution of this template does NOT ship the project-agent
+#    Rust source (closed-source moat per project README). When mcp/ is absent
+#    we still produce a usable scaffold: hooks + sqlite schema work
+#    standalone; you query the devlog with the `sqlite3` CLI.
+MCP_REGISTERED=0
+if [ -d "$MCP_DIR/project-agent-rs" ]; then
+    BINARY="$MCP_DIR/project-agent-rs/target/release/project-agent"
+    if [ ! -x "$BINARY" ]; then
+        echo "Building project-agent Rust binary (one-time, ~50s)..."
+        if (cd "$MCP_DIR/project-agent-rs" && cargo build --release); then
+            :
+        else
+            echo "WARN: cargo build failed. Install Rust (https://rustup.rs) to retry."
+            BINARY=""
+        fi
+    fi
+    if [ -n "$BINARY" ] && [ -x "$BINARY" ] && command -v claude >/dev/null 2>&1; then
+        claude mcp add project-agent \
+            -s project \
+            -e PROJECT_MEMORY_DIR="$PROJECT_DIR/memory" \
+            -e PROJECT_LOG_DIR="$PROJECT_DIR/logs" \
+            -- "$BINARY" && MCP_REGISTERED=1
+    fi
 fi
-
-# 4. Register MCP at project scope (writes .mcp.json in project root).
-#    PROJECT_MEMORY_DIR + PROJECT_LOG_DIR isolate this project's state.
-
-claude mcp add project-agent \
-    -s project \
-    -e PROJECT_MEMORY_DIR="$PROJECT_DIR/memory" \
-    -e PROJECT_LOG_DIR="$PROJECT_DIR/logs" \
-    -- "$BINARY"
 
 echo ""
 echo "✅ Project scaffolded at: $PROJECT_DIR"
 echo "   Memory dir: $PROJECT_DIR/memory"
 echo "   Log dir:    $PROJECT_DIR/logs (devlog.sqlite)"
-echo "   MCP config: $PROJECT_DIR/.mcp.json"
+if [ "$MCP_REGISTERED" -eq 1 ]; then
+    echo "   MCP config: $PROJECT_DIR/.mcp.json"
+else
+    echo ""
+    echo "ℹ  MCP server not registered (binary source not bundled in this"
+    echo "   distribution). The scaffold and hooks still work; query the"
+    echo "   devlog directly with: sqlite3 \"$PROJECT_DIR/logs/devlog.sqlite\""
+    echo "   Hosted MCP binary download is on the roadmap."
+fi
 echo ""
 echo "▶ Next step — open Claude in the new project to start discovery dialog:"
 echo ""

@@ -1,50 +1,88 @@
 #!/usr/bin/env bash
-# Codetrail — install np + adopt helpers into ~/.zshrc.
-# Safe to re-run (checks for existing functions before appending).
+# Codetrail — install helpers + scaffolder. Self-contained.
 #
 # Usage:
 #   curl -fsSL https://codetrail.dipgle.com/install.txt | bash
 #
-# Requirements: macOS / Linux / WSL2 + Claude Code installed.
+# Requirements: macOS / Linux / WSL2 + git + (optional) Claude Code
+#
+# This script:
+#   1. Clones github.com/dipgle/codetrail into ~/.codetrail (or git pulls if present)
+#   2. Adds `np` and `adopt` shell helpers to ~/.zshrc or ~/.bashrc
+#   3. Prints a one-line "next step"
+#
+# What you get after install:
+#   - `np my-app`     scaffolds ~/Documents/projects/AI/my-app and opens Claude Code
+#   - `adopt`         scaffolds CLAUDE.md + docs/ + memory/ + logs/devlog.sqlite in pwd
+#   - hooks/          PostToolUse + SessionStart hooks (you copy to ~/.claude/hooks/
+#                     yourself; the installer does NOT touch ~/.claude/ globally)
+#
+# Known limitation (open beta): the MCP server binary that ties devlog to
+# Claude Code's tool layer is not yet bundled in this OSS repo. The
+# scaffolder will skip MCP registration with a clear notice. The hooks and
+# sqlite schema still work standalone — you can query devlog with sqlite3
+# directly. A hosted MCP binary download is on the roadmap.
 
 set -e
 
-RC="$HOME/.zshrc"
-[ ! -f "$RC" ] && RC="$HOME/.bashrc"
+REPO="https://github.com/dipgle/codetrail.git"
+HOME_DIR="${CODETRAIL_HOME:-$HOME/.codetrail}"
 
-if grep -q "# Codetrail helpers" "$RC" 2>/dev/null; then
-    echo "→ helpers already present in $RC — skipping."
-    echo ""
-    echo "Try: np my-app    (or: cd /path/to/existing && adopt)"
-    exit 0
+# 1. Clone or update repo at $HOME_DIR
+if [ -d "$HOME_DIR/.git" ]; then
+    echo "→ Updating $HOME_DIR"
+    git -C "$HOME_DIR" pull --ff-only --quiet
+else
+    echo "→ Cloning $REPO into $HOME_DIR"
+    git clone --quiet "$REPO" "$HOME_DIR"
 fi
 
-cat >> "$RC" <<'EOF'
+# 2. Ensure scaffolder is executable
+chmod +x "$HOME_DIR/template/startup.sh" 2>/dev/null || true
+chmod +x "$HOME_DIR/hooks/"*.sh 2>/dev/null || true
+
+# 3. Pick an rc file (prefer zsh; fall back to bash; create zsh if neither)
+RC="$HOME/.zshrc"
+if [ ! -f "$RC" ] && [ -f "$HOME/.bashrc" ]; then
+    RC="$HOME/.bashrc"
+elif [ ! -f "$RC" ]; then
+    touch "$RC"
+fi
+
+# 4. Append helpers if not already present (idempotent)
+if grep -q "# Codetrail helpers" "$RC" 2>/dev/null; then
+    echo "→ helpers already present in $RC — skipping append."
+else
+    cat >> "$RC" <<EOF
 
 # Codetrail helpers — auto-installed
+export CODETRAIL_HOME="\${CODETRAIL_HOME:-$HOME_DIR}"
+
 np() {
-  [ -z "$1" ] && { echo "Usage: np <name|path>"; return 1; }
+  [ -z "\$1" ] && { echo "Usage: np <name|path>"; return 1; }
   local DIR
-  if [[ "$1" == */* ]]; then DIR="$1"
-  else DIR="$HOME/Documents/projects/AI/$1"
+  if [[ "\$1" == */* ]]; then DIR="\$1"
+  else DIR="\$HOME/Documents/projects/AI/\$1"
   fi
-  ~/Documents/projects/AI/init-project/startup.sh "$DIR" || return 1
-  cd "$DIR" && claude
+  "\$CODETRAIL_HOME/template/startup.sh" "\$DIR" || return 1
+  cd "\$DIR" && command -v claude >/dev/null 2>&1 && claude || echo "(install Claude Code, then: cd \"\$DIR\" && claude)"
 }
 
 adopt() {
-  local DIR="${1:-$(pwd)}"
-  [ ! -d "$DIR" ] && { echo "Not a dir: $DIR"; return 1; }
-  ~/Documents/projects/AI/init-project/startup.sh "$DIR" || return 1
-  echo "Next: cd \"$DIR\" && claude"
+  local DIR="\${1:-\$(pwd)}"
+  [ ! -d "\$DIR" ] && { echo "Not a dir: \$DIR"; return 1; }
+  "\$CODETRAIL_HOME/template/startup.sh" "\$DIR" || return 1
+  echo "Next: cd \"\$DIR\" && claude"
 }
 EOF
+    echo "✓ Installed helpers into $RC"
+fi
 
-echo "✓ Installed Codetrail helpers into $RC"
 echo ""
 echo "Next steps:"
-echo "  1. source $RC    (or open a new terminal)"
-echo "  2. np my-app     (creates ~/Documents/projects/AI/my-app/)"
+echo "  1. source $RC   (or open a new terminal)"
+echo "  2. np my-app    (creates ~/Documents/projects/AI/my-app/ and opens Claude)"
+echo "     adopt        (scaffolds current dir for Codetrail)"
 echo ""
-echo "Docs: https://codetrail.dipgle.com/"
 echo "Source: https://github.com/dipgle/codetrail"
+echo "Docs:   https://codetrail.dipgle.com/"
