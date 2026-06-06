@@ -158,6 +158,10 @@ my-app/
 ├── PLAN.md            ← Plan hiện tại
 ├── TODO.md            ← Task list
 ├── .mcp.json          ← Register MCP devlog
+├── runner.sh          ← Allowlist command queue (bash, macOS/Linux/WSL)
+├── runner.ps1         ← Same thing, PowerShell port (native Windows)
+├── .cmd-queue/        ← Claude drops <id>.cmd here
+├── .cmd-results/      ← Daemon writes <id>.log here + audit.log + runner.pid
 ├── docs/
 │   ├── kickoff.md     ← Discovery dialog fill
 │   ├── architecture.md
@@ -172,3 +176,26 @@ my-app/
 └── logs/
     └── devlog.sqlite  ← Source of truth (events, UC, TC, runs)
 ```
+
+## Optional — Layer 4: runner daemon (sandbox escape hatch)
+
+Khi Claude Code sandbox (hoặc CI / remote agent) không cho assistant exec
+shell trực tiếp, dùng `runner.sh` (macOS/Linux/WSL) hoặc `runner.ps1`
+(native Windows) như queue trung gian:
+
+```bash
+# macOS/Linux/WSL — daemon auto-start lúc np/adopt; quản lý:
+bash runner.sh status
+bash runner.sh exec "npm test"      # one-shot: auto-start nếu chưa, enqueue, đợi, in
+bash runner.sh stop
+
+# Windows native (không qua WSL2):
+pwsh -File runner.ps1 start
+pwsh -File runner.ps1 exec "npm test"
+pwsh -File runner.ps1 stop
+```
+
+Allowlist rỗng mặc định — edit `ALLOWLIST_EXACT` / `ALLOWLIST_PREFIX` trong
+script để cho phép command. Audit ở `.cmd-results/audit.log`. Skip auto-spawn
+qua env `CODETRAIL_NO_RUNNER=1`. **Không chạy cả hai cùng project** — chúng
+race trên cùng queue files.

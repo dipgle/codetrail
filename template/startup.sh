@@ -52,13 +52,19 @@ for f in active-context.md session-summary.md discovered-knowledge.md; do
     [ -f "memory/$f" ] || touch "memory/$f"
 done
 
-# Scaffold runner.sh — file-based command runner for sandbox/CI escape hatch.
-# Allowlist ships empty; user edits the script to add their commands.
-# Daemon auto-spawns at end of this script (see step 4); user can stop with
-# `bash runner.sh stop` or skip by setting CODETRAIL_NO_RUNNER=1.
+# Scaffold runner.sh + runner.ps1 — file-based command runner (escape hatch
+# for sandbox / CI environments where Claude can't exec shell directly).
+# Both ship empty allowlists; users edit to add their commands.
+# Bash daemon auto-spawns at end of this script (see step 4); user can stop
+# with `bash runner.sh stop` or skip via CODETRAIL_NO_RUNNER=1.
+# Windows-native users use `pwsh -File runner.ps1 start` instead — same
+# on-disk contract (do NOT run both at once against the same project).
 if [ ! -f runner.sh ] && [ -f "$SCRIPT_DIR/runner.sh" ]; then
     cp "$SCRIPT_DIR/runner.sh" runner.sh
     chmod +x runner.sh
+fi
+if [ ! -f runner.ps1 ] && [ -f "$SCRIPT_DIR/runner.ps1" ]; then
+    cp "$SCRIPT_DIR/runner.ps1" runner.ps1
 fi
 mkdir -p .cmd-queue .cmd-results
 
