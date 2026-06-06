@@ -1,10 +1,14 @@
-# MCP server — two implementations
+# MCP servers
 
-Both servers expose the same 14 tools (same JSON-RPC contract, same SQLite
-schema). Pick whichever your environment supports. They can be swapped at any
-time by editing the project's `.mcp.json`.
+Two separate servers ship here:
 
-## Which one runs
+- **project-agent** (Node or Rust impl) — devlog + UC/TC tracking + project
+  routing. Both implementations expose the same 14 tools; pick by environment.
+- **vault-node** — secret-by-reference server for running commands with
+  keychain-resolved credentials without the secret reaching Claude. Optional,
+  runs alongside project-agent. See [`vault-node/`](vault-node/).
+
+## project-agent — which implementation runs
 
 `template/startup.sh` auto-detects:
 
