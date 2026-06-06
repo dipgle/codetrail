@@ -9,12 +9,15 @@
 #   captured stdout/stderr to .cmd-results/<id>.log for Claude to read back.
 #
 # USAGE
-#   1. Start daemon (in a separate terminal, leave running):
-#        bash runner.sh
-#   2. Claude enqueues a command:
-#        echo "cargo test" > .cmd-queue/run-001.cmd
-#   3. Claude reads result after ~1s:
-#        cat .cmd-results/run-001.log
+#   bash runner.sh                # foreground watch (Ctrl+C to stop)
+#   bash runner.sh start          # spawn daemon in background (idempotent)
+#   bash runner.sh stop           # kill the daemon if running
+#   bash runner.sh status         # report running/stopped + PID
+#   bash runner.sh exec "<cmd>"   # ensure-running, enqueue, wait, print result
+#
+#   `exec` is the one-shot Claude-friendly form: it auto-starts the daemon
+#   if needed, drops the command, polls for the result file (default 30s
+#   timeout via $RUNNER_EXEC_TIMEOUT), prints it, and returns the exit code.
 #
 # SECURITY
 #   - Only commands matching ALLOWLIST_EXACT (whole-line equality) or
@@ -56,6 +59,8 @@ declare -a ALLOWLIST_PREFIX=(
 
 QUEUE_DIR=".cmd-queue"
 RESULT_DIR=".cmd-results"
+PID_FILE="$RESULT_DIR/runner.pid"
+DAEMON_LOG="$RESULT_DIR/daemon.log"
 mkdir -p "$QUEUE_DIR" "$RESULT_DIR"
 AUDIT="$RESULT_DIR/audit.log"
 
@@ -115,16 +120,128 @@ run_one() {
   rm "$cmd_file"
 }
 
-echo "runner.sh watching $QUEUE_DIR/  — Ctrl+C to stop"
-echo "    EXACT allowlist:  ${#ALLOWLIST_EXACT[@]} commands"
-echo "    PREFIX allowlist: ${#ALLOWLIST_PREFIX[@]} patterns"
-echo "    Audit log:        $AUDIT"
-echo ""
+watch_loop() {
+  echo "runner.sh watching $QUEUE_DIR/  (PID $$)"
+  echo "    EXACT allowlist:  ${#ALLOWLIST_EXACT[@]} commands"
+  echo "    PREFIX allowlist: ${#ALLOWLIST_PREFIX[@]} patterns"
+  echo "    Audit log:        $AUDIT"
 
-while true; do
-  for f in "$QUEUE_DIR"/*.cmd; do
-    [[ -f "$f" ]] || continue
-    run_one "$f"
+  while true; do
+    for f in "$QUEUE_DIR"/*.cmd; do
+      [[ -f "$f" ]] || continue
+      run_one "$f"
+    done
+    sleep 1
   done
-  sleep 1
-done
+}
+
+# Return 0 if daemon is alive (PID file exists AND process running), else 1.
+# Cleans up stale PID file as a side effect.
+is_running() {
+  [[ -f "$PID_FILE" ]] || return 1
+  local pid; pid="$(cat "$PID_FILE" 2>/dev/null || echo)"
+  if [[ -z "$pid" ]] || ! kill -0 "$pid" 2>/dev/null; then
+    rm -f "$PID_FILE"
+    return 1
+  fi
+  return 0
+}
+
+cmd_start() {
+  if is_running; then
+    echo "runner: already running (PID $(cat "$PID_FILE"))"
+    return 0
+  fi
+  # Spawn this script in foreground-watch mode, detached.
+  nohup "$BASH" "$0" >> "$DAEMON_LOG" 2>&1 &
+  local pid=$!
+  echo "$pid" > "$PID_FILE"
+  # Give it a moment to either crash or settle.
+  sleep 0.3
+  if kill -0 "$pid" 2>/dev/null; then
+    echo "runner: started (PID $pid, log $DAEMON_LOG)"
+  else
+    rm -f "$PID_FILE"
+    echo "runner: failed to start — check $DAEMON_LOG"
+    return 1
+  fi
+}
+
+cmd_stop() {
+  if ! is_running; then
+    echo "runner: not running"
+    return 0
+  fi
+  local pid; pid="$(cat "$PID_FILE")"
+  kill "$pid" 2>/dev/null || true
+  # Wait briefly for clean shutdown.
+  local i=0
+  while kill -0 "$pid" 2>/dev/null && (( i < 20 )); do
+    sleep 0.1
+    i=$((i + 1))
+  done
+  if kill -0 "$pid" 2>/dev/null; then
+    kill -9 "$pid" 2>/dev/null || true
+  fi
+  rm -f "$PID_FILE"
+  echo "runner: stopped (was PID $pid)"
+}
+
+cmd_status() {
+  if is_running; then
+    echo "runner: RUNNING (PID $(cat "$PID_FILE"))"
+    echo "    queue:  $QUEUE_DIR/"
+    echo "    audit:  $AUDIT"
+    return 0
+  fi
+  echo "runner: stopped"
+  return 1
+}
+
+cmd_exec() {
+  local cmd="${1:-}"
+  if [[ -z "$cmd" ]]; then
+    echo "usage: runner.sh exec \"<command>\"" >&2
+    return 2
+  fi
+  is_running || cmd_start >/dev/null || {
+    echo "runner: cannot start daemon" >&2
+    return 1
+  }
+
+  local id="exec-$(date +%s)-$$"
+  local result_file="$RESULT_DIR/$id.log"
+  echo "$cmd" > "$QUEUE_DIR/$id.cmd"
+
+  local timeout="${RUNNER_EXEC_TIMEOUT:-30}"
+  local waited=0
+  while [[ ! -f "$result_file" ]] && (( waited < timeout * 10 )); do
+    sleep 0.1
+    waited=$((waited + 1))
+  done
+
+  if [[ ! -f "$result_file" ]]; then
+    echo "runner: timeout after ${timeout}s waiting for $id" >&2
+    return 124
+  fi
+
+  cat "$result_file"
+  local last_line; last_line="$(tail -n1 "$result_file")"
+  case "$last_line" in
+    "exit: "*) return "${last_line#exit: }" ;;
+    *) return 0 ;;
+  esac
+}
+
+case "${1:-}" in
+  start)  shift; cmd_start "$@" ;;
+  stop)   shift; cmd_stop "$@" ;;
+  status) shift; cmd_status "$@" ;;
+  exec)   shift; cmd_exec "$@" ;;
+  "")     watch_loop ;;
+  *)
+    echo "usage: $0 [start|stop|status|exec \"<command>\"]" >&2
+    echo "       (no arg = foreground watch)" >&2
+    exit 2
+    ;;
+esac

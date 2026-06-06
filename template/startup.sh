@@ -53,8 +53,9 @@ for f in active-context.md session-summary.md discovered-knowledge.md; do
 done
 
 # Scaffold runner.sh — file-based command runner for sandbox/CI escape hatch.
-# The daemon is opt-in (user must run `bash runner.sh` to start watching).
 # Allowlist ships empty; user edits the script to add their commands.
+# Daemon auto-spawns at end of this script (see step 4); user can stop with
+# `bash runner.sh stop` or skip by setting CODETRAIL_NO_RUNNER=1.
 if [ ! -f runner.sh ] && [ -f "$SCRIPT_DIR/runner.sh" ]; then
     cp "$SCRIPT_DIR/runner.sh" runner.sh
     chmod +x runner.sh
@@ -242,6 +243,12 @@ else
     echo "ℹ  MCP server not registered. Hooks + sqlite still work standalone;"
     echo "   query devlog with: sqlite3 \"$PROJECT_DIR/logs/devlog.sqlite\""
 fi
+# 4. Auto-spawn runner.sh daemon (idempotent; PID lock prevents duplicates).
+#    Opt out with CODETRAIL_NO_RUNNER=1. Stop later with `bash runner.sh stop`.
+if [ -z "${CODETRAIL_NO_RUNNER:-}" ] && [ -x ./runner.sh ]; then
+    ./runner.sh start || echo "   (runner auto-start failed — start manually with: bash runner.sh start)"
+fi
+
 echo ""
 echo "▶ Next step — open Claude in the new project to start discovery dialog:"
 echo ""
