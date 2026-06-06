@@ -52,6 +52,15 @@ for f in active-context.md session-summary.md discovered-knowledge.md; do
     [ -f "memory/$f" ] || touch "memory/$f"
 done
 
+# Scaffold runner.sh — file-based command runner for sandbox/CI escape hatch.
+# The daemon is opt-in (user must run `bash runner.sh` to start watching).
+# Allowlist ships empty; user edits the script to add their commands.
+if [ ! -f runner.sh ] && [ -f "$SCRIPT_DIR/runner.sh" ]; then
+    cp "$SCRIPT_DIR/runner.sh" runner.sh
+    chmod +x runner.sh
+fi
+mkdir -p .cmd-queue .cmd-results
+
 # 2. Initialize devlog sqlite (idempotent — schema is also created on first MCP write).
 DEVLOG="$PROJECT_DIR/logs/devlog.sqlite"
 if [ ! -f "$DEVLOG" ]; then
