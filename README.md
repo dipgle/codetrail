@@ -71,7 +71,7 @@ exist yet. Local devlog, hooks, and MCP server stay free forever.
 ## What's in this repo
 
 - 🛠️ `template/` — the project scaffolder (CLAUDE.md, sqlite schema seeder, `startup.sh`)
-- 🪝 `hooks/` — auto-artifact log + stale-resume-check hooks for Claude Code
+- 🪝 `hooks/` — full enforcement layer for Claude Code: cred redaction + tool-read deny + auto-artifact log + stale-resume check + question discipline + visual-artifact render reminder + auto-adopt (see [hooks/README.md](hooks/README.md), install via `bash hooks/install.sh`)
 - 🧠 `mcp/project-agent-node/` — TypeScript MCP server (default)
 - 🦀 `mcp/project-agent-rs/` — Rust MCP server (faster, optional)
 - 🌐 `landing/` — the static site you see at codetrail.dipgle.com (+ deploy.mjs)
