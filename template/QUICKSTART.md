@@ -158,10 +158,10 @@ my-app/
 ├── PLAN.md            ← Plan hiện tại
 ├── TODO.md            ← Task list
 ├── .mcp.json          ← Register MCP devlog
-├── runner.sh          ← Allowlist command queue (bash, macOS/Linux/WSL)
-├── runner.ps1         ← Same thing, PowerShell port (native Windows)
-├── .cmd-queue/        ← Claude drops <id>.cmd here
-├── .cmd-results/      ← Daemon writes <id>.log here + audit.log + runner.pid
+├── .runner-allowlist  ← Text allowlist for shared runner daemon (per-project)
+├── scripts/
+│   ├── .cmd-queue/    ← Claude drops <id>.cmd here
+│   └── .cmd-results/  ← Daemon writes <id>.log + audit.log + daemon.pid
 ├── docs/
 │   ├── kickoff.md     ← Discovery dialog fill
 │   ├── architecture.md
@@ -180,22 +180,31 @@ my-app/
 ## Optional — Layer 4: runner daemon (sandbox escape hatch)
 
 Khi Claude Code sandbox (hoặc CI / remote agent) không cho assistant exec
-shell trực tiếp, dùng `runner.sh` (macOS/Linux/WSL) hoặc `runner.ps1`
-(native Windows) như queue trung gian:
+shell trực tiếp, codetrail có một runner daemon CHIA SẺ giữa các project:
+
+- Code daemon ở `$CODETRAIL_HOME/scripts/{runner.sh,daemon-ctl.sh}` (ONE copy)
+- Mỗi project chỉ giữ `.runner-allowlist` (text format) và thư mục
+  `scripts/.cmd-queue/` + `scripts/.cmd-results/`
 
 ```bash
-# macOS/Linux/WSL — daemon auto-start lúc np/adopt; quản lý:
-bash runner.sh status
-bash runner.sh exec "npm test"      # one-shot: auto-start nếu chưa, enqueue, đợi, in
-bash runner.sh stop
+# Quản lý daemon — projects dùng chung daemon-ctl:
+bash $CODETRAIL_HOME/scripts/daemon-ctl.sh status  <project>
+bash $CODETRAIL_HOME/scripts/daemon-ctl.sh ensure  <project>   # idempotent start
+bash $CODETRAIL_HOME/scripts/daemon-ctl.sh restart <project>   # reload allowlist
+bash $CODETRAIL_HOME/scripts/daemon-ctl.sh stop    <project>
+bash $CODETRAIL_HOME/scripts/daemon-ctl.sh list                # tất cả daemon
 
-# Windows native (không qua WSL2):
-pwsh -File runner.ps1 start
-pwsh -File runner.ps1 exec "npm test"
-pwsh -File runner.ps1 stop
+# `<project>` là tên thư mục dưới ~/Documents/projects/AI/ (hoặc absolute path).
 ```
 
-Allowlist rỗng mặc định — edit `ALLOWLIST_EXACT` / `ALLOWLIST_PREFIX` trong
-script để cho phép command. Audit ở `.cmd-results/audit.log`. Skip auto-spawn
-qua env `CODETRAIL_NO_RUNNER=1`. **Không chạy cả hai cùng project** — chúng
-race trên cùng queue files.
+`np`/`adopt` tự call `ensure` ở cuối. SessionStart hook (`runner-ensure.sh`)
+cũng gọi `ensure` mỗi lần mở Claude trong project — phòng case reboot máy
+hoặc clone repo về máy mới. Skip auto-spawn qua env `CODETRAIL_NO_RUNNER=1`.
+
+Allowlist mặc định bao gồm các utility read-only (ls/cat/grep/find/git
+status|log|diff/sqlite3 logs/devlog.sqlite). Edit `.runner-allowlist`
+trong project để thêm command (`npm test`, `cargo build`, …) — mỗi entry
+mở rộng trust boundary, log `kind=decision` để audit. Sau khi sửa
+allowlist phải `daemon-ctl.sh restart <project>` để reload.
+
+Audit: `<project>/scripts/.cmd-results/audit.log`.

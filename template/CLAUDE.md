@@ -361,6 +361,53 @@ in the evidence. Asking the user a question that documentation answers is
 wasted user time.
 
 
+COMMAND EXECUTION (shared runner daemon)
+
+Codetrail ships ONE runner daemon implementation at
+`$CODETRAIL_HOME/scripts/runner.sh`, managed by
+`$CODETRAIL_HOME/scripts/daemon-ctl.sh`. Each project owns only its
+`.runner-allowlist` (text file at the project root). A SessionStart
+hook auto-runs `daemon-ctl.sh ensure <project>` so the daemon is up
+whenever you join a session here.
+
+Prefer the queue over the Bash tool when ANY of:
+  - the Bash tool is denied / sandboxed in this environment
+  - the command is long-running (>30s) — daemon survives across messages
+  - you want an audit trail (`scripts/.cmd-results/audit.log`)
+
+Usage — drop a `.cmd` file with the Write tool, then read the result:
+
+    Write  scripts/.cmd-queue/<id>.cmd   ← single line: the command
+    Read   scripts/.cmd-results/<id>.log ← poll until file appears
+
+The daemon's cwd is `<project>/scripts/`, so relative paths in commands
+resolve from there. Allowlist format (`.runner-allowlist`):
+
+    [exact]
+    npm test
+    cargo build
+    [prefix]
+    grep
+    git log
+
+Read-only utilities (`ls`, `cat`, `grep`, `find`, `git status|log|diff`,
+`sqlite3 logs/devlog.sqlite`, …) ship pre-allowed in the template.
+
+To widen the allowlist for a project-specific command (`npm test`,
+`cargo build`, `pytest`):
+  1. Edit `.runner-allowlist` (add under `[exact]` or `[prefix]`).
+  2. `bash $CODETRAIL_HOME/scripts/daemon-ctl.sh restart <project>` to
+     reload the parsed allowlist arrays.
+  3. Log the addition (`log_event kind=decision`) — each entry widens
+     the trust boundary; the audit log lets future-you see why.
+
+NEVER add destructive prefixes (`rm `, `mv `, `chmod `, `sudo`, `>`
+redirection). The daemon is for safe automation, not escalation.
+
+Rejected commands write `exit: 126` to the result log; check
+`scripts/.cmd-results/audit.log` if a queued command unexpectedly fails.
+
+
 BEFORE CHANGING CODE
 - architecture impact
 - convention impact

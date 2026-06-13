@@ -1,0 +1,55 @@
+# Allowlist for runner.sh daemon (parsed at daemon start).
+# Edit + run `daemon-ctl.sh restart <project>` to pick up changes.
+#
+# Format:
+#   [exact]   — whole-line equality. Good for fixed test/build commands.
+#   [prefix]  — string prefix match. Good for variable-arg utilities
+#               (grep PATTERN, find PATH, tail FILE, ...).
+#
+# Each command added widens the trust boundary of the daemon — review
+# what the command can do before adding it. Audit trail per call lives
+# in scripts/.cmd-results/audit.log.
+
+[exact]
+# Add project-specific test/build commands here. Examples:
+# npm test
+# npm run build
+# cargo build
+# cargo test
+# pytest -q
+# make check
+
+[prefix]
+# --- Read-only filesystem inspection ---
+ls
+cat
+head
+tail
+wc
+file
+stat
+find
+tree
+
+# --- Read-only text search ---
+grep
+rg
+ag
+
+# --- Read-only git introspection ---
+git status
+git log
+git diff
+git show
+git branch
+git remote
+git config --get
+
+# --- Read-only devlog query ---
+sqlite3 logs/devlog.sqlite
+
+# --- Optional examples — uncomment if needed ---
+# curl -sS http://localhost:
+# npm run
+# cargo build
+# pytest

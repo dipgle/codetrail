@@ -52,21 +52,14 @@ for f in active-context.md session-summary.md discovered-knowledge.md; do
     [ -f "memory/$f" ] || touch "memory/$f"
 done
 
-# Scaffold runner.sh + runner.ps1 — file-based command runner (escape hatch
-# for sandbox / CI environments where Claude can't exec shell directly).
-# Both ship empty allowlists; users edit to add their commands.
-# Bash daemon auto-spawns at end of this script (see step 4); user can stop
-# with `bash runner.sh stop` or skip via CODETRAIL_NO_RUNNER=1.
-# Windows-native users use `pwsh -File runner.ps1 start` instead — same
-# on-disk contract (do NOT run both at once against the same project).
-if [ ! -f runner.sh ] && [ -f "$SCRIPT_DIR/runner.sh" ]; then
-    cp "$SCRIPT_DIR/runner.sh" runner.sh
-    chmod +x runner.sh
+# Scaffold per-project allowlist for the SHARED runner daemon.
+# The runner.sh + daemon-ctl.sh live ONCE at $REPO_ROOT/scripts/ — no copy
+# per project. Each project owns only its `.runner-allowlist` (text format,
+# parsed at daemon start). Edit the file then `daemon-ctl.sh restart <proj>`.
+if [ ! -f .runner-allowlist ] && [ -f "$SCRIPT_DIR/.runner-allowlist" ]; then
+    cp "$SCRIPT_DIR/.runner-allowlist" .runner-allowlist
 fi
-if [ ! -f runner.ps1 ] && [ -f "$SCRIPT_DIR/runner.ps1" ]; then
-    cp "$SCRIPT_DIR/runner.ps1" runner.ps1
-fi
-mkdir -p .cmd-queue .cmd-results
+mkdir -p scripts/.cmd-queue scripts/.cmd-results
 
 # 2. Initialize devlog sqlite (idempotent — schema is also created on first MCP write).
 DEVLOG="$PROJECT_DIR/logs/devlog.sqlite"
@@ -249,10 +242,13 @@ else
     echo "ℹ  MCP server not registered. Hooks + sqlite still work standalone;"
     echo "   query devlog with: sqlite3 \"$PROJECT_DIR/logs/devlog.sqlite\""
 fi
-# 4. Auto-spawn runner.sh daemon (idempotent; PID lock prevents duplicates).
-#    Opt out with CODETRAIL_NO_RUNNER=1. Stop later with `bash runner.sh stop`.
-if [ -z "${CODETRAIL_NO_RUNNER:-}" ] && [ -x ./runner.sh ]; then
-    ./runner.sh start || echo "   (runner auto-start failed — start manually with: bash runner.sh start)"
+# 4. Ensure per-project runner daemon via the shared daemon-ctl.
+#    Opt out with CODETRAIL_NO_RUNNER=1. Stop later with
+#    `bash $REPO_ROOT/scripts/daemon-ctl.sh stop $PROJECT_DIR`.
+DAEMON_CTL="$REPO_ROOT/scripts/daemon-ctl.sh"
+if [ -z "${CODETRAIL_NO_RUNNER:-}" ] && [ -x "$DAEMON_CTL" ]; then
+    "$DAEMON_CTL" ensure "$PROJECT_DIR" || \
+        echo "   (daemon auto-start failed — manual: bash $DAEMON_CTL ensure $PROJECT_DIR)"
 fi
 
 echo ""

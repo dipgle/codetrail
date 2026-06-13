@@ -43,6 +43,7 @@ HOOK_SPECS=(
     "cred-scrubber.sh|UserPromptSubmit|"
     "auto-adopt.sh|SessionStart|startup"
     "devlog-resume-check.sh|SessionStart|startup"
+    "runner-ensure.sh|SessionStart|startup"
     "cred-pre-tool.sh|PreToolUse|Read|Bash"
     "log-source-tools.sh|PostToolUse|WebFetch|WebSearch|ReadMcpResourceTool"
     "devlog-artifact.sh|PostToolUse|Edit|Write|NotebookEdit"

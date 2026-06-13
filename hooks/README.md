@@ -16,6 +16,7 @@ and remind without depending on the model's discipline.
 | `vault-get.sh` | helper (not registered) | Resolve `<cred-N>` → real value at shell exec time. Use in Bash like `pass="$(vault-get.sh <session> cred-1)"`. |
 | `auto-adopt.sh` | `SessionStart` (`startup`) | Detect unadopted folders under `$CLAUDE_PROJECTS_ROOT`. Inform Claude (or auto-scaffold via `$CLAUDE_ADOPT_SCRIPT` if `CLAUDE_AUTO_ADOPT=1`). |
 | `devlog-resume-check.sh` | `SessionStart` (`startup`) | Compare newest file mtime against last devlog event. If gap > 1h, warn that resume narrative is likely stale. |
+| `runner-ensure.sh` | `SessionStart` (`startup`) | If cwd has `.runner-allowlist`, invoke `$CODETRAIL_HOME/scripts/daemon-ctl.sh ensure <cwd>`. Idempotent via daemon-ctl's PID check. Covers post-clone / post-reboot gap where the per-project daemon hasn't been spawned on this machine yet. |
 | `devlog-artifact.sh` | `PostToolUse` (`Edit\|Write\|NotebookEdit`) | Walk up from edited file → log `kind=artifact` event into the nearest `logs/devlog.sqlite`. Removes the "remember to log" burden. |
 | `log-source-tools.sh` | `PostToolUse` (`WebFetch\|WebSearch\|ReadMcpResourceTool`) | Append each external lookup to `~/.claude/source-log.jsonl`. Feeds `question-discipline.sh`. |
 | `question-discipline.sh` | `Stop` | If last assistant turn ended with a question and no `kind=source` event in devlog or source-log in last 30 min → emit `QUESTION_DISCIPLINE_VIOLATION` reminder. |
@@ -71,7 +72,7 @@ There's no uninstall script. To remove:
    `.hooks`. (You can keep the hook files in `~/.claude/hooks/`; they
    only fire when registered.)
 2. Optionally remove the hook files themselves with
-   `rm ~/.claude/hooks/{cred-,vault-,log-source,question-,rule6-,auto-adopt,devlog-}*.sh`.
+   `rm ~/.claude/hooks/{cred-,vault-,log-source,question-,rule6-,auto-adopt,devlog-,runner-}*.sh`.
 
 ## Hook schema reference
 
