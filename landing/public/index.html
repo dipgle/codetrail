@@ -3,20 +3,20 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title data-i18n="meta.title">Codetrail — Persistent memory for Claude Code, Cursor, Aider sessions</title>
+  <title data-i18n="meta.title">Codetrail — Persistent memory for Claude Code sessions</title>
   <meta name="description" data-i18n-attr="content" data-i18n="meta.desc"
         content="Codetrail gives Claude Code persistent memory across sessions: auto-logging devlog, UC/TC tracking, stale-resume warnings. Never re-explain your project to the AI again." />
   <link rel="canonical" href="https://codetrail.dipgle.com/" />
   <meta property="og:type" content="website" />
   <meta property="og:site_name" content="Codetrail" />
-  <meta property="og:title" content="Codetrail — Persistent memory for Claude Code, Cursor, Aider sessions" />
+  <meta property="og:title" content="Codetrail — Persistent memory for Claude Code sessions" />
   <meta property="og:description" content="Auto-logging devlog, UC/TC tracking, stale-resume warnings. Stop losing context between Claude Code sessions." />
   <meta property="og:url" content="https://codetrail.dipgle.com/" />
   <meta property="og:image" content="https://codetrail.dipgle.com/og-image.svg" />
   <meta property="og:image:width" content="1200" />
   <meta property="og:image:height" content="630" />
   <meta name="twitter:card" content="summary" />
-  <meta name="twitter:title" content="Codetrail — Persistent memory for Claude Code, Cursor, Aider sessions" />
+  <meta name="twitter:title" content="Codetrail — Persistent memory for Claude Code sessions" />
   <meta name="twitter:description" content="Auto-logging devlog, UC/TC tracking, stale-resume warnings. Stop losing context between Claude Code sessions." />
   <meta name="twitter:image" content="https://codetrail.dipgle.com/og-image.svg" />
   <link rel="stylesheet" href="/styles.css" />
@@ -121,59 +121,40 @@
     </section>
 
     <section class="compare">
-      <h2 data-i18n="cmp.title">Why Codetrail</h2>
-      <p class="lede" data-i18n="cmp.lede">Honest table. We track what no other AI-coding tool tracks structurally.</p>
-      <div class="cmp-wrap">
-        <table class="cmp">
-          <thead>
-            <tr>
-              <th></th>
-              <th class="us"><strong>Codetrail</strong></th>
-              <th data-i18n="cmp.col.cc">Claude Code</th>
-              <th data-i18n="cmp.col.aider">Aider</th>
-              <th data-i18n="cmp.col.cursor">Cursor</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td data-i18n="cmp.row.devlog">Structured project devlog (events / decisions)</td>
-              <td class="us">●</td><td>—</td><td data-i18n="cmp.git">git only</td><td>—</td>
-            </tr>
-            <tr>
-              <td data-i18n="cmp.row.uctc">UC / TC + test_runs tracked separately</td>
-              <td class="us">●</td><td>—</td><td>—</td><td>—</td>
-            </tr>
-            <tr>
-              <td data-i18n="cmp.row.multi">Multi-project memory across N codebases</td>
-              <td class="us">●</td><td data-i18n="cmp.partial">partial (chat memory)</td><td data-i18n="cmp.perrepo">per-repo</td><td data-i18n="cmp.sess">per IDE session</td>
-            </tr>
-            <tr>
-              <td data-i18n="cmp.row.auto">Auto-log every artifact without code calls</td>
-              <td class="us">●</td><td data-i18n="cmp.discipline">discipline-based</td><td data-i18n="cmp.inherent">inherent</td><td>—</td>
-            </tr>
-            <tr>
-              <td data-i18n="cmp.row.viewer">Browser-native viewer for any team member</td>
-              <td class="us">●</td><td>—</td><td data-i18n="cmp.terminal">terminal log</td><td>—</td>
-            </tr>
-            <tr>
-              <td data-i18n="cmp.row.stale">Stale-resume warning at session start</td>
-              <td class="us">●</td><td>—</td><td>—</td><td>—</td>
-            </tr>
-            <tr>
-              <td data-i18n="cmp.row.local">Local-first; no cloud component</td>
-              <td class="us">●</td><td data-i18n="cmp.hybrid">hybrid</td><td class="us">●</td><td data-i18n="cmp.cloud">cloud-only</td>
-            </tr>
-            <tr>
-              <td data-i18n="cmp.row.setup">Setup time</td>
-              <td class="us" data-i18n="cmp.setup.us">~30s (np my-app)</td>
-              <td data-i18n="cmp.setup.cc">~5min</td>
-              <td data-i18n="cmp.setup.aider">~1min</td>
-              <td data-i18n="cmp.setup.cursor">~10min IDE config</td>
-            </tr>
-          </tbody>
-        </table>
+      <h2 data-i18n="box.title">What lands on your machine</h2>
+      <p class="lede" data-i18n="box.lede">One install, six pieces. All MIT, all readable, all on your disk — nothing phones home.</p>
+      <div class="features box-grid">
+        <article>
+          <div class="ico" aria-hidden="true">▤</div>
+          <h3 data-i18n="box.devlog.title">The devlog + MCP server</h3>
+          <p data-i18n="box.devlog.body">A SQLite file per project and a server exposing 14 tools over it. Ships in Node and Rust — same tools, pick by whichever toolchain you already have.</p>
+        </article>
+        <article>
+          <div class="ico" aria-hidden="true">◐</div>
+          <h3 data-i18n="box.hooks.title">Hooks</h3>
+          <p data-i18n="box.hooks.body">Auto-artifact logging, stale-resume warning, credential scrubbing, source logging. You copy them into <code>~/.claude/hooks/</code> yourself — the installer never touches that directory.</p>
+        </article>
+        <article>
+          <div class="ico" aria-hidden="true">⌗</div>
+          <h3 data-i18n="box.scaffold.title">The scaffolder</h3>
+          <p data-i18n="box.scaffold.body"><code>np</code> for a new project, <code>adopt</code> for one that already has code. Both idempotent: they add what's missing and never overwrite what you wrote.</p>
+        </article>
+        <article>
+          <div class="ico" aria-hidden="true">⎇</div>
+          <h3 data-i18n="box.runner.title">The runner daemon</h3>
+          <p data-i18n="box.runner.body">A file-queue for when the assistant can't reach a shell. Every command is checked against a text allowlist you own, runs in its own subshell, and lands in an audit log.</p>
+        </article>
+        <article>
+          <div class="ico" aria-hidden="true">▦</div>
+          <h3 data-i18n="box.monitor.title">The terminal monitor</h3>
+          <p data-i18n="box.monitor.body">A read-only dashboard over the devlog, refreshing every 2s. Health warnings, active use cases, recent events, test summary — in a second terminal while the session works.</p>
+        </article>
+        <article>
+          <div class="ico" aria-hidden="true">◉</div>
+          <h3 data-i18n="box.viewer.title">The browser viewer</h3>
+          <p data-i18n="box.viewer.body">Drag a <code>devlog.sqlite</code> onto the page and read it. Pure WASM — the file is parsed in the tab and never uploaded, so you can hand it to a teammate who installs nothing.</p>
+        </article>
       </div>
-      <p class="cmp-note" data-i18n="cmp.note">Spotted something off? <a href="mailto:codetrail@dipgle.com">Tell us</a> — we update this table when we're wrong.</p>
     </section>
 
     <section class="how">
@@ -196,7 +177,7 @@
 
     <section class="install" id="install">
       <h2 data-i18n="inst.title">Install in 30 seconds</h2>
-      <p class="lede" data-i18n="inst.lede">Two helpers: <code>np</code> for new projects, <code>adopt</code> for existing ones. Works on macOS, Linux, Windows (native or WSL2). Requires Node 20+ and Claude Code.</p>
+      <p class="lede" data-i18n="inst.lede">Two helpers: <code>np</code> for new projects, <code>adopt</code> for existing ones. macOS and Linux natively; Windows through WSL2. Requires Node 20+ and Claude Code — the terminal monitor wants Node 22+.</p>
       <div class="install-card">
         <div class="install-step">
           <div class="step-num">1</div>

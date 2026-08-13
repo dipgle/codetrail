@@ -3,8 +3,11 @@ target/
 dist/
 .DS_Store
 *.log
-logs/devlog.sqlite-wal
-logs/devlog.sqlite-shm
+# SQLite sidecars, anywhere. Merely READING a .sqlite (sqlite3, the viewer's
+# demo file, a monitor run) creates these next to it; the database itself is
+# tracked, the sidecars never are.
+*.sqlite-wal
+*.sqlite-shm
 .env
 .env.local
 
