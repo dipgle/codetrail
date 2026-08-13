@@ -25,8 +25,9 @@ Guarantees:
 - Secret is **never** in subprocess argv (so `ps` cannot see it).
 - subprocess stdout is **never** returned to Claude — only exit code +
   first line of stderr capped at 200 chars.
-- First word of the command must be in a hard-coded allowlist
-  (`pg_dump`, `psql`, `curl`, `aws`, `gh`).
+- First word of the command must be in the allowlist. The shipped baseline is
+  `pg_dump`, `psql`, `curl`, `aws`, `gh`; see
+  [Widening the allowlist](#widening-the-allowlist) to extend it per install.
 - Fetched secret buffer is zeroed immediately after subprocess spawn.
   Note: the value briefly lives as a JS string (immutable, not truly
   zeroizable) while being passed to `spawnSync({ env })` — best-effort.
@@ -78,6 +79,36 @@ The `-a vault` account name scopes entries to this tool.
 
 First run on macOS may prompt for keychain access — choose **Always Allow**
 so autonomous runs don't block.
+
+## Widening the allowlist
+
+Set `VAULT_EXTRA_COMMANDS` in the server's MCP registration — comma or
+space separated. It is appended to the baseline, never replaces it:
+
+```json
+"vault": {
+  "type": "stdio",
+  "command": "node",
+  "args": ["/path/to/mcp/vault-node/dist/server.js"],
+  "env": { "VAULT_EXTRA_COMMANDS": "node,make" }
+}
+```
+
+Read at startup only, from the registration the operator writes. No tool
+widens the allowlist at runtime, so nothing the model does can reach it.
+Restart the MCP client for a change to take effect.
+
+Decide deliberately. What this server guarantees is about the secret VALUE —
+resolved in-process, passed only through `$SECRET`, kept out of argv, and the
+subprocess's stdout never returned. That holds whatever the allowlist says.
+What the allowlist bounds is what a command can DO while holding the secret.
+The baseline already contains `curl`, a general-purpose network client, so
+adding an interpreter is a difference of degree rather than of kind — but add
+what the job actually needs, and never add a shell.
+
+One consequence worth planning around: stdout is discarded, so a widened
+command that you need output from has to write it somewhere you can read
+afterwards — `node deploy.mjs > /tmp/deploy.log 2>&1`, then open the file.
 
 ## Usage from Claude
 

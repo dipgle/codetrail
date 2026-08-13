@@ -17,7 +17,10 @@ import { extname, join, relative, resolve } from "node:path";
 
 const HOST = process.env.TFL5_HOST?.replace(/\/+$/, "");
 const USER = process.env.TFL5_USER;
-const PASS = process.env.TFL5_PASS;
+// SECRET is what the vault MCP server names the value it resolves from the
+// keychain. Accepting it here means the deploy can run without the password
+// passing through a shell command, a prompt, or anyone's scrollback.
+const PASS = process.env.TFL5_PASS || process.env.SECRET;
 const APP_NAME = process.env.APP_NAME || "Codetrail";
 const APP_DOMAIN = process.env.APP_DOMAIN || "";
 const APP_DIR = resolve(process.env.APP_DIR || "public");

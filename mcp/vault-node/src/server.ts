@@ -15,8 +15,36 @@ import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
 import { z } from "zod";
 import { spawnSync } from "node:child_process";
 
-// Hard-coded allowlist. Add commands only after security review.
-const ALLOWED_COMMANDS = ["pg_dump", "psql", "curl", "aws", "gh"] as const;
+// Baseline allowlist shipped with the server. Add entries here only after a
+// security review — this is the default every installation inherits.
+const BASE_ALLOWED_COMMANDS = ["pg_dump", "psql", "curl", "aws", "gh"] as const;
+
+// An operator can widen the allowlist for their own installation without
+// forking the shipped default:
+//
+//   "vault": { "command": "node", "args": ["…/dist/server.js"],
+//              "env": { "VAULT_EXTRA_COMMANDS": "node,make" } }
+//
+// Deliberately env-only. The value is read once at startup from the MCP server
+// registration, which the operator writes and the model cannot reach — there is
+// no tool here that widens the allowlist at runtime.
+//
+// Widening is a real decision, not a formality. The guarantee this server makes
+// is about the secret VALUE: it is resolved in-process, passed only through
+// $SECRET, kept out of argv, and the subprocess's stdout is never returned. That
+// guarantee survives any allowlist. What the allowlist bounds is what a command
+// can DO once it holds the secret — and the baseline already includes curl, a
+// general-purpose network client, so an interpreter is a difference of degree
+// rather than of kind. Add what the job needs; don't add a shell.
+const EXTRA_ALLOWED_COMMANDS = (process.env.VAULT_EXTRA_COMMANDS ?? "")
+  .split(/[,\s]+/)
+  .map((s) => s.trim())
+  .filter(Boolean);
+
+const ALLOWED_COMMANDS: readonly string[] = [
+  ...BASE_ALLOWED_COMMANDS,
+  ...EXTRA_ALLOWED_COMMANDS,
+];
 
 type Status = "OK" | "FAILED" | "BLOCKED" | "SECRET_NOT_FOUND" | "EXEC_ERROR";
 
@@ -91,7 +119,7 @@ server.tool(
   async ({ secret_ref, command_template }) => {
     // 1. Validate command first word against allowlist.
     const firstWord = command_template.trim().split(/\s+/)[0] ?? "";
-    if (!ALLOWED_COMMANDS.includes(firstWord as (typeof ALLOWED_COMMANDS)[number])) {
+    if (!ALLOWED_COMMANDS.includes(firstWord)) {
       return result({
         exit_code: -1,
         status: "BLOCKED",
