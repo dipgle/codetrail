@@ -22,6 +22,10 @@
 #     tail
 #     grep
 #
+#   A [prefix] match additionally requires the tail (everything after the
+#   matched prefix) to be free of shell control characters — otherwise
+#   `grep foo; rm -rf ~` would pass on the strength of the `grep` entry.
+#
 # QUEUE LAYOUT (per project)
 #   <project-root>/scripts/.cmd-queue/<id>.cmd     # Claude drops here
 #   <project-root>/scripts/.cmd-results/<id>.log   # daemon writes here
@@ -101,20 +105,51 @@ if [[ -f "$HOOKS_FILE" ]]; then
 fi
 
 # Default eval — projects can override by defining `eval_cmd` in their hook.
+#
+# Each command runs in a SUBSHELL that re-enters $SCRIPTS_DIR. Running `eval`
+# directly in the daemon's own shell let a command containing `cd …` move the
+# cwd permanently, so every later command resolved its relative paths from
+# somewhere else. That failure is silent and order-dependent: the same script
+# succeeded at 19:53 and returned `exit 127` at 20:22, with dozens of
+# `cd …/contract/ts && node …` calls in between. The subshell also stops env
+# vars leaking between queued commands. A command that needs a different cwd
+# must `cd` inside itself, the way absolute-path entries already do.
 if ! declare -F eval_cmd >/dev/null; then
-  eval_cmd() { eval "$1"; }
+  eval_cmd() { ( cd "$SCRIPTS_DIR" && eval "$1" ); }
 fi
+
+REJECT_REASON=""
 
 is_allowed() {
   local cmd="$1"
   local a p
+  REJECT_REASON="matched no line in the allowlist"
   # `${arr[@]+"${arr[@]}"}` safely expands empty arrays under `set -u`
   # on macOS bash 3.2 (otherwise: "unbound variable" exit 1).
   for a in ${ALLOWLIST_EXACT[@]+"${ALLOWLIST_EXACT[@]}"}; do
     [[ "$cmd" == "$a" ]] && return 0
   done
   for p in ${ALLOWLIST_PREFIX[@]+"${ALLOWLIST_PREFIX[@]}"}; do
-    [[ "$cmd" == "$p"* ]] && return 0
+    if [[ "$cmd" == "$p"* ]]; then
+      # A [prefix] entry matched. Plain prefix matching + `eval` means every
+      # prefix line is effectively "run anything": `grep foo; rm -rf ~` matches
+      # the prefix `grep` and eval then runs the tail as its own command. The
+      # hole is in the MATCHING layer, so no amount of allowlist tightening
+      # closes it.
+      #
+      # Rule: the TAIL (what follows the matched prefix) may not contain shell
+      # control characters. Legitimate entries that contain `&&` (e.g.
+      # `cd … && node …`) are unaffected — their `&&` lives inside the prefix
+      # itself, not in the tail.
+      local tail_
+      tail_=${cmd#"$p"}
+      case "$tail_" in
+        *[';&|`$><'\\]*)
+          REJECT_REASON="tail after prefix contains shell control characters: $tail_"
+          return 1 ;;
+      esac
+      return 0
+    fi
   done
   return 1
 }
@@ -132,10 +167,11 @@ run_one() {
     {
       echo "=== id=$id @ $stamp ==="
       echo "\$ $cmd"
-      echo "REJECTED: command not in allowlist ($ALLOWLIST_FILE)"
+      echo "REJECTED: $REJECT_REASON"
+      echo "  (allowlist: $ALLOWLIST_FILE)"
       echo "exit: 126"
     } > "$result_file"
-    echo "[$stamp] REJECTED: $cmd" | tee -a "$AUDIT"
+    echo "[$stamp] REJECTED: $cmd  <-- $REJECT_REASON" | tee -a "$AUDIT"
     rm "$cmd_file"
     return
   fi

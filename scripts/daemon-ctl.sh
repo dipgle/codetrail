@@ -2,10 +2,10 @@
 # daemon-ctl.sh — manage per-project runner.sh daemons.
 #
 # WHY
-#   Each project subdir under ~/Documents/projects/ has its own file-queue
+#   Each project subdir under the projects root has its own file-queue
 #   runner daemon (see runner.sh). Claude spawns the daemon on session
 #   focus and restarts it after editing the project's .runner-allowlist.
-#   No LaunchAgent → avoids macOS TCC blocks on ~/Documents/.
+#   No LaunchAgent → avoids macOS TCC blocks under ~/Documents/.
 #
 # USAGE
 #   daemon-ctl.sh ensure  <project>   # start if not running (idempotent)
@@ -16,8 +16,8 @@
 #   daemon-ctl.sh list                # show all daemons across projects
 #
 # PROJECT ARG
-#   Either a bare name (looked up under ~/Documents/projects/AI/<name>/
-#   then ~/Documents/projects/<name>/) or an absolute path.
+#   Either a bare name (looked up under <projects-root>/AI/<name>/ then
+#   <projects-root>/<name>/) or an absolute path. See PROJECTS_ROOT below.
 #
 # PIDFILE
 #   <project>/scripts/.cmd-results/daemon.pid — written on start, removed on stop.
@@ -29,9 +29,18 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 RUNNER="$SCRIPT_DIR/runner.sh"
 # Projects root — override for non-standard layouts.
 # Default matches the codetrail convention (`np`/`adopt` scaffold under
-# ~/Documents/projects/AI/). If you keep projects elsewhere, set
-# CODETRAIL_PROJECTS_ROOT in your shell rc.
-PROJECTS_ROOT="${CODETRAIL_PROJECTS_ROOT:-$HOME/Documents/projects}"
+# <root>/AI/). ~/projects is preferred over ~/Documents/projects: macOS TCC
+# guards Documents/ and revokes read access intermittently even with Full Disk
+# Access granted, which makes a daemon rooted there fail at random. The
+# Documents path stays as a fallback for pre-existing layouts. Set
+# CODETRAIL_PROJECTS_ROOT in your shell rc to point anywhere else.
+if [[ -n "${CODETRAIL_PROJECTS_ROOT:-}" ]]; then
+  PROJECTS_ROOT="$CODETRAIL_PROJECTS_ROOT"
+elif [[ -d "$HOME/projects" ]]; then
+  PROJECTS_ROOT="$HOME/projects"
+else
+  PROJECTS_ROOT="$HOME/Documents/projects"
+fi
 
 resolve_project() {
   local arg="$1"
@@ -40,14 +49,32 @@ resolve_project() {
     return
   fi
   # bare name lookup
-  for base in "$PROJECTS_ROOT/AI/v1" "$PROJECTS_ROOT/AI" "$PROJECTS_ROOT"; do
+  for base in "$PROJECTS_ROOT/AI" "$PROJECTS_ROOT"; do
     if [[ -d "$base/$arg" ]]; then
       (cd "$base/$arg" && pwd)
       return
     fi
   done
-  echo "ERROR: cannot resolve project '$arg' (looked under $PROJECTS_ROOT/{AI/v1,AI,})" >&2
+  echo "ERROR: cannot resolve project '$arg' (looked under $PROJECTS_ROOT/{AI,})" >&2
   return 1
+}
+
+# Kill every runner.sh running FOR THIS project (match on the last argv word =
+# the project root, so other projects' daemons are untouched). $2 (optional) is
+# a pid to KEEP. Without this, orphans accumulate: a runner left over from an
+# old session isn't in the pidfile, so is_running() misses it and start() adds
+# a second daemon watching the same queue.
+kill_runners_for() {
+  local proj="$1" keep="${2:-}"
+  local pids pid
+  pids="$(ps -Ao pid,command | awk -v proj="$proj" '/runner\.sh/ && $NF==proj {print $1}')"
+  for pid in $pids; do
+    [[ -n "$keep" && "$pid" == "$keep" ]] && continue
+    kill "$pid" 2>/dev/null || true
+  done
+  # brief grace period for the processes to exit
+  [[ -n "$pids" ]] && sleep 1
+  return 0
 }
 
 pidfile_for() { echo "$1/scripts/.cmd-results/daemon.pid"; }
@@ -94,8 +121,10 @@ cmd_start() {
     echo "ALREADY-RUNNING  pid=$pid  project=$proj" >&2
     return 1
   fi
-  # Stale pidfile cleanup
+  # Stale pidfile cleanup + reap orphan runners the pidfile never tracked,
+  # so exactly one daemon is left watching this queue after start.
   rm -f "$pidfile"
+  kill_runners_for "$proj"
 
   if [[ ! -f "$proj/.runner-allowlist" ]]; then
     echo "ERROR: missing $proj/.runner-allowlist — create it before starting daemon" >&2
@@ -151,7 +180,10 @@ cmd_ensure() {
   local pidfile; pidfile="$(pidfile_for "$proj")"
   if is_running "$pidfile"; then
     local pid; pid="$(cat "$pidfile")"
-    echo "RUNNING  pid=$pid  project=$proj  (no-op)"
+    # Reap orphans (keeping the tracked pid) so duplicates can't pile up even
+    # when the tracked daemon is healthy.
+    kill_runners_for "$proj" "$pid"
+    echo "RUNNING  pid=$pid  project=$proj  (no-op; orphans reaped if any)"
     return 0
   fi
   cmd_start "$proj"
@@ -166,7 +198,7 @@ cmd_restart() {
 cmd_list() {
   shopt -s nullglob
   local found=0
-  for pidfile in "$PROJECTS_ROOT"/{AI/v1,AI,}/*/scripts/.cmd-results/daemon.pid; do
+  for pidfile in "$PROJECTS_ROOT"/{AI,}/*/scripts/.cmd-results/daemon.pid; do
     [[ -f "$pidfile" ]] || continue
     local proj; proj="$(cd "$(dirname "$pidfile")/../.." && pwd)"
     if is_running "$pidfile"; then
