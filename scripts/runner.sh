@@ -35,6 +35,10 @@
 # RELOAD
 #   Allowlist loaded once at start. Edit allowlist → kill + restart daemon
 #   (launchd KeepAlive=true restarts automatically within ~10s).
+#
+# TESTS
+#   bash scripts/test-runner.sh — regression lock for the matching rules and
+#   command isolation below. Run it after ANY edit to is_allowed or eval_cmd.
 
 set -u
 

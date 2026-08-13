@@ -234,4 +234,15 @@ Project cần hành vi eval khác (env prefix, build ở thư mục anh em): đ�
 File đó được daemon `source` và **không** bị allowlist kiểm — sửa nó là mở
 rộng trust boundary.
 
+Sửa `is_allowed` hay `eval_cmd` xong thì chạy:
+
+```bash
+bash "$CODETRAIL_HOME/scripts/test-runner.sh"
+```
+
+10 assert trên một project throwaway dưới `$TMPDIR`: entry thường vẫn chạy,
+tiêm lệnh sau prefix bị chặn **và không thực thi**, dòng allowlist có `&&`
+không bị chặn oan, cwd trở lại `<project>/scripts` ở lệnh kế, lệnh ngoài
+danh sách bị từ chối. Exit 0 = xanh.
+
 Audit: `<project>/scripts/.cmd-results/audit.log`.
