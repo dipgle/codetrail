@@ -76,6 +76,13 @@ const I18N = {
     "wait.placeholder": "you@example.com",
     "wait.submit": "Subscribe",
     "wait.meta": "Occasional product updates. One-click unsubscribe in every email.",
+    "wait.ok": "Got it. We'll email when a major feature ships.",
+    "wait.sending": "Sending…",
+    "wait.err.invalid_email": "That doesn't look like a valid email. Try again?",
+    "wait.err.rate_limited": "Too many submissions from your network this hour. Please try again later.",
+    "wait.err.quota_full": "Waitlist is full for now. Watch the repo for updates.",
+    "wait.err.not_configured": "The waitlist isn't open yet. Please check back soon.",
+    "wait.err.network": "Could not reach the server. Your email was saved locally — please retry.",
 
     "foot.tagline": "Persistent memory for AI coding sessions.",
     "foot.product": "Product",
@@ -297,6 +304,13 @@ const I18N = {
     "wait.placeholder": "ban@example.com",
     "wait.submit": "Đăng ký",
     "wait.meta": "Thi thoảng có cập nhật. Unsubscribe 1 click trong mọi email.",
+    "wait.ok": "Đã nhận! Chúng tôi sẽ gửi note ngắn khi có feature lớn ship.",
+    "wait.sending": "Đang gửi…",
+    "wait.err.invalid_email": "Email không hợp lệ. Bạn thử lại nhé?",
+    "wait.err.rate_limited": "Quá nhiều lượt gửi từ mạng của bạn trong giờ này. Thử lại sau giúp.",
+    "wait.err.quota_full": "Waitlist tạm đầy. Theo dõi repo để cập nhật tiếp.",
+    "wait.err.not_configured": "Waitlist chưa mở. Bạn quay lại sau nhé.",
+    "wait.err.network": "Không kết nối được server. Email đã được lưu local — bạn thử lại sau.",
 
     "foot.tagline": "Bộ nhớ bền vững cho session AI.",
     "foot.product": "Sản phẩm",
@@ -491,22 +505,66 @@ function initLangToggle() {
 function initWaitlist() {
   const form = document.getElementById("waitForm");
   if (!form) return;
-  form.addEventListener("submit", (e) => {
-    const email = (new FormData(form).get("email") || "").toString().trim();
-    if (!email) return;
+  const appTid = form.dataset.appTid;
+  const formId = form.dataset.formId || "waitlist";
+  const ERR_CODE_TO_I18N = {
+    public_form_field_invalid_email: "wait.err.invalid_email",
+    public_form_field_required: "wait.err.invalid_email",
+    public_form_rate_limited: "wait.err.rate_limited",
+    public_form_quota_full: "wait.err.quota_full",
+    public_form_not_configured: "wait.err.not_configured",
+  };
+  form.addEventListener("submit", async (e) => {
     e.preventDefault();
+    const email = (new FormData(form).get("email") || "").toString().trim();
+    if (!email || !appTid) return;
     const lang = document.documentElement.dataset.lang || "en";
-    const msg = lang === "vi"
-      ? "Đã nhận! Chúng tôi sẽ gửi note ngắn khi có feature lớn ship."
-      : "Got it. We'll email when a major feature ships.";
-    form.innerHTML = `<p style="color:var(--accent);font-weight:600">${msg}</p>
-      <p class="wait-meta">${email}</p>`;
+    const t = (key) => (I18N[lang] && I18N[lang][key]) || (I18N.en && I18N.en[key]) || key;
+    const btn = form.querySelector("button[type=submit]");
+    if (btn) { btn.disabled = true; btn.textContent = t("wait.sending"); }
     try {
-      const stored = JSON.parse(localStorage.getItem("codetrail.waitlist") || "[]");
-      stored.push({ email, ts: Date.now(), lang });
-      localStorage.setItem("codetrail.waitlist", JSON.stringify(stored));
-    } catch (_) {}
+      const res = await fetch("/app/public-form/submit", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ app_tid: appTid, form_id: formId, fields: { email } }),
+      });
+      const body = await res.json().catch(() => ({}));
+      if (res.ok && body.result === true) {
+        form.innerHTML = `<p style="color:var(--accent);font-weight:600">${t("wait.ok")}</p>
+          <p class="wait-meta">${email}</p>`;
+        try {
+          const stored = JSON.parse(localStorage.getItem("codetrail.waitlist") || "[]");
+          stored.push({ email, ts: Date.now(), lang, tid: body.submission_tid });
+          localStorage.setItem("codetrail.waitlist", JSON.stringify(stored));
+        } catch (_) {}
+        return;
+      }
+      const code = body && body.code;
+      const i18nKey = ERR_CODE_TO_I18N[code] || "wait.err.network";
+      const fallbackMsg = (body && body.msg) || t(i18nKey);
+      showWaitErr(form, ERR_CODE_TO_I18N[code] ? t(i18nKey) : fallbackMsg);
+    } catch (_) {
+      showWaitErr(form, t("wait.err.network"));
+      try {
+        const stored = JSON.parse(localStorage.getItem("codetrail.waitlist") || "[]");
+        stored.push({ email, ts: Date.now(), lang, pending: true });
+        localStorage.setItem("codetrail.waitlist", JSON.stringify(stored));
+      } catch (_) {}
+    } finally {
+      if (btn) { btn.disabled = false; btn.textContent = t("wait.submit"); }
+    }
   });
+}
+
+function showWaitErr(form, msg) {
+  let el = form.querySelector(".wait-err");
+  if (!el) {
+    el = document.createElement("p");
+    el.className = "wait-err";
+    el.style.cssText = "color:#e0556e;font-weight:600;margin-top:.6rem";
+    form.appendChild(el);
+  }
+  el.textContent = msg;
 }
 
 window.I18N = I18N;
