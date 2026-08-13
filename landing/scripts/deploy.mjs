@@ -104,6 +104,17 @@ async function postForm(path, form) {
 }
 
 // ------- file walk -------
+// Files that live in the public dir but must never be uploaded. This walks the
+// filesystem, not git, so .gitignore does not filter it: merely READING
+// demo-devlog.sqlite leaves -wal/-shm sidecars next to it, and every deploy
+// then tried to push them and collected two rejections from the server.
+const SKIP = [
+  /\.sqlite-(wal|shm)$/, // sqlite sidecars — transient, meaningless to a client
+  /(^|\/)\.DS_Store$/,
+  /(^|\/)\._/,           // macOS resource forks
+  /(^|\/)Thumbs\.db$/,
+];
+
 function walk(root) {
   const out = [];
   function rec(dir) {
@@ -111,7 +122,7 @@ function walk(root) {
       const p = join(dir, name);
       const st = statSync(p);
       if (st.isDirectory()) rec(p);
-      else if (st.isFile()) out.push(p);
+      else if (st.isFile() && !SKIP.some((re) => re.test(p))) out.push(p);
     }
   }
   rec(root);
