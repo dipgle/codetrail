@@ -24,24 +24,42 @@ set -u
 INPUT=$(cat)
 export HOOK_INPUT="$INPUT"
 
-# Resolve daemon-ctl path. Priority:
-#   1. $CODETRAIL_HOME (set by install.txt) → $CODETRAIL_HOME/scripts/daemon-ctl.sh
-#   2. ~/.codetrail/scripts/daemon-ctl.sh        (install.txt default home)
-#   3. ~/projects/{scripts,AI/codetrail/scripts}/daemon-ctl.sh (workspace layout)
-#   4. ~/Documents/projects/... (legacy root — kept last on purpose: macOS TCC
-#      guards Documents/ and can deny reads intermittently, so it must never
-#      shadow a working path above it)
+# Resolve daemon-ctl path, preferring what is KNOWN over what is guessed:
+#   1. $CODETRAIL_HOME (set by install.txt).
+#   2. Walk UP from cwd looking for scripts/daemon-ctl.sh or
+#      AI/codetrail/scripts/daemon-ctl.sh. The session's own location tells us
+#      the layout, so no assumption about anyone's home directory is needed.
+#   3. ~/.codetrail — install.txt's default clone target.
+#   4. $HOME guesses — last resort only. ~/Documents/... sits at the very
+#      bottom on purpose: macOS TCC guards that folder and can deny reads
+#      intermittently, so it must never shadow a working path above it.
+walk_up_for_daemon_ctl() {
+    local dir="${1:-$PWD}" cand
+    while [ -n "$dir" ] && [ "$dir" != "/" ]; do
+        for cand in "$dir/scripts/daemon-ctl.sh" \
+                    "$dir/AI/codetrail/scripts/daemon-ctl.sh"; do
+            [ -x "$cand" ] && { echo "$cand"; return 0; }
+        done
+        dir="$(dirname "$dir")"
+    done
+    return 1
+}
+
 resolve_daemon_ctl() {
     local cand
+    if [ -n "${CODETRAIL_HOME:-}" ] && [ -x "$CODETRAIL_HOME/scripts/daemon-ctl.sh" ]; then
+        echo "$CODETRAIL_HOME/scripts/daemon-ctl.sh"
+        return 0
+    fi
+    walk_up_for_daemon_ctl "$PWD" && return 0
     for cand in \
-        "${CODETRAIL_HOME:-}/scripts/daemon-ctl.sh" \
         "$HOME/.codetrail/scripts/daemon-ctl.sh" \
         "$HOME/projects/scripts/daemon-ctl.sh" \
         "$HOME/projects/AI/codetrail/scripts/daemon-ctl.sh" \
         "$HOME/Documents/projects/scripts/daemon-ctl.sh" \
         "$HOME/Documents/projects/AI/codetrail/scripts/daemon-ctl.sh"
     do
-        if [ -n "$cand" ] && [ -x "$cand" ]; then
+        if [ -x "$cand" ]; then
             echo "$cand"
             return 0
         fi

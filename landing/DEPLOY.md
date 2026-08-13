@@ -5,8 +5,11 @@ This app lives inside `tfl5/data/default/codetrail/` and serves in tfl5 STATIC m
 
 ## Local dev
 
+Set `TFL5_REPO` to wherever your tfl5 checkout lives — this repo makes no
+assumption about the layout around it.
+
 ```bash
-cd ~/projects/AI/tfl5
+cd "${TFL5_REPO:?set TFL5_REPO to your tfl5 checkout}"
 TFL5_STATIC_APP=codetrail \
 TFL5_DEV=1 \
 TFL5_BIND=127.0.0.1:8091 \
@@ -73,13 +76,25 @@ the systemd unit (or `TFL5_DEV=1` for hot-reload during local iteration).
 
 No DB. No migrations. No state. Pure static + Tera includes.
 
-## Waitlist (P0 stub → P1 real)
+## Waitlist
 
-Current form posts via `mailto:trace.codetrail@gmail.com` AND stores to
-`localStorage` for a snapshot. Replace `<form action>` and the JS handler
-in `public/script.js#initWaitlist` once a real endpoint exists.
+The `mailto:` stub is gone. The form now POSTs to the tfl5 public-form
+endpoint: `public/index.html#waitForm` carries `data-app-tid` +
+`data-form-id`, and `public/script.js#initWaitlist` maps `public_form_*`
+error codes to bilingual messages, falling back to `localStorage` when the
+network fails so an address is never dropped silently.
 
-Recommended P1 endpoints:
-- Formspree / Getform (zero-code, free 50/mo)
-- Custom tfl5 API route in full-mode cell
-- Buttondown / ConvertKit (newsletter-ready)
+The form schema is registered by `scripts/set-public-form-config.mjs`
+(idempotent upsert). It reads everything from the environment — nothing
+about the target is baked into the repo:
+
+```bash
+TFL5_HOST=https://<your-cpanel-host> \
+TFL5_USER=<designer-or-above> \
+TFL5_PASS=<password> \
+APP_TID=<app tid> \
+node scripts/set-public-form-config.mjs
+```
+
+Defaults if unset: `FORM_ID=waitlist`, and a schema of one required email
+field capped at 256 chars, rate-limited to 5 submissions per IP per hour.

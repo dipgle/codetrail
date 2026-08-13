@@ -27,15 +27,35 @@ set -u
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 RUNNER="$SCRIPT_DIR/runner.sh"
-# Projects root — override for non-standard layouts.
-# Default matches the codetrail convention (`np`/`adopt` scaffold under
-# <root>/AI/). ~/projects is preferred over ~/Documents/projects: macOS TCC
-# guards Documents/ and revokes read access intermittently even with Full Disk
-# Access granted, which makes a daemon rooted there fail at random. The
-# Documents path stays as a fallback for pre-existing layouts. Set
-# CODETRAIL_PROJECTS_ROOT in your shell rc to point anywhere else.
+# Projects root, resolved in order of how much it is actually KNOWN:
+#
+#   1. $CODETRAIL_PROJECTS_ROOT — explicit, always wins.
+#   2. Derived from where this script sits. A clone inside the projects tree
+#      (<root>/AI/codetrail/scripts/ or <root>/scripts/) already encodes the
+#      answer, so read it instead of guessing.
+#   3. $HOME guesses — last resort, for a clone parked outside the tree
+#      (e.g. ~/.codetrail). ~/projects comes before ~/Documents/projects:
+#      macOS TCC guards Documents/ and revokes read access intermittently
+#      even with Full Disk Access, which makes a daemon rooted there fail at
+#      random. Set CODETRAIL_PROJECTS_ROOT and none of this guessing runs.
+derive_projects_root() {
+  local d="$SCRIPT_DIR"
+  # <root>/AI/codetrail/scripts → up 3
+  if [[ "$(basename "$(dirname "$d")")" == "codetrail" \
+     && "$(basename "$(dirname "$(dirname "$d")")")" == "AI" ]]; then
+    (cd "$d/../../.." && pwd); return 0
+  fi
+  # <root>/scripts, but only when it looks like a projects tree
+  if [[ "$(basename "$d")" == "scripts" && -d "$(dirname "$d")/AI" ]]; then
+    (cd "$d/.." && pwd); return 0
+  fi
+  return 1
+}
+
 if [[ -n "${CODETRAIL_PROJECTS_ROOT:-}" ]]; then
   PROJECTS_ROOT="$CODETRAIL_PROJECTS_ROOT"
+elif PROJECTS_ROOT="$(derive_projects_root)"; then
+  :
 elif [[ -d "$HOME/projects" ]]; then
   PROJECTS_ROOT="$HOME/projects"
 else
