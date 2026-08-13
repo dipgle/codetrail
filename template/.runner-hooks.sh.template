@@ -1,0 +1,43 @@
+# <project-name> — per-project runner hook (OPTIONAL).
+#
+# Sourced by $CODETRAIL_HOME/scripts/runner.sh after the allowlist is parsed,
+# from the project root as `<project>/.runner-hooks.sh`. Define `eval_cmd <cmd>`
+# to override how a queued command is executed — useful when a command needs a
+# specific cwd, an env-var prefix, or post-processing that pure allowlist
+# matching cannot express.
+#
+# DELETE THIS FILE if your project needs no custom eval behavior. The runner's
+# default already handles the common case:
+#
+#   eval_cmd() { ( cd "$SCRIPTS_DIR" && eval "$1" ); }
+#
+# Note the subshell: every command starts from <project>/scripts/ and cannot
+# leak cwd or env vars into the next one. If you override `eval_cmd`, KEEP the
+# subshell — dropping it lets a command containing `cd …` move the daemon's cwd
+# permanently, which breaks every later command in a silent, order-dependent way.
+#
+# The hook runs with the daemon's privileges and is NOT allowlist-checked. It is
+# the project owner's trust boundary: an override that eval's untrusted input,
+# or that widens what a queued command can reach, defeats the allowlist. Keep
+# overrides narrow — match one command family, fall through to the default.
+#
+# Example — run one tool family from a sibling directory:
+#
+#   eval_cmd() {
+#     local cmd="$1"
+#     if [[ "$cmd" == wasm-pack* ]]; then
+#       ( cd "$SCRIPTS_DIR/../../my-wasm-crate" && eval "$cmd" )
+#     else
+#       ( cd "$SCRIPTS_DIR" && eval "$cmd" )
+#     fi
+#   }
+#
+# Example — inject env vars for a specific command family:
+#
+#   eval_cmd() {
+#     local cmd="$1"
+#     case "$cmd" in
+#       "cargo test "*) ( cd "$SCRIPTS_DIR" && RUST_LOG=info eval "$cmd" ) ;;
+#       *)              ( cd "$SCRIPTS_DIR" && eval "$cmd" ) ;;
+#     esac
+#   }

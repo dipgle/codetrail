@@ -61,6 +61,15 @@ if [ ! -f .runner-allowlist ] && [ -f "$SCRIPT_DIR/.runner-allowlist" ]; then
 fi
 mkdir -p scripts/.cmd-queue scripts/.cmd-results
 
+# Optional per-project eval override for the daemon. Shipped as .example so it
+# stays inert until the owner renames it — runner.sh only sources the file at
+# `.runner-hooks.sh`, and that file is NOT allowlist-checked.
+if [ ! -f .runner-hooks.sh ] && [ ! -f .runner-hooks.sh.example ] \
+   && [ -f "$SCRIPT_DIR/.runner-hooks.sh.template" ]; then
+    sed "s|<project-name>|$(basename "$PROJECT_DIR")|g" \
+        "$SCRIPT_DIR/.runner-hooks.sh.template" > .runner-hooks.sh.example
+fi
+
 # 2. Initialize devlog sqlite (idempotent — schema is also created on first MCP write).
 DEVLOG="$PROJECT_DIR/logs/devlog.sqlite"
 if [ ! -f "$DEVLOG" ]; then

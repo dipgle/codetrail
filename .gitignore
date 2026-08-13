@@ -7,3 +7,9 @@ logs/devlog.sqlite-wal
 logs/devlog.sqlite-shm
 .env
 .env.local
+
+# Editor / migration backups. Bulk path-rewrites across the workspace leave
+# *.bak-premove* next to every touched file; they are byte-identical copies and
+# must never enter the repo.
+*.bak
+*.bak-*

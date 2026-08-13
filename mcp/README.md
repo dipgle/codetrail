@@ -8,6 +8,21 @@ Two separate servers ship here:
   keychain-resolved credentials without the secret reaching Claude. Optional,
   runs alongside project-agent. See [`vault-node/`](vault-node/).
 
+Plus one standalone tool that is not an MCP server:
+
+- **[`monitor.js`](monitor.js)** — read-only terminal dashboard over a
+  project's `logs/devlog.sqlite`. Run it in a second terminal to watch health
+  warnings, active UCs, recent events, and the test summary refresh every 2s
+  while a Claude session works:
+
+      node "$CODETRAIL_HOME/mcp/monitor.js" /path/to/project/logs/devlog.sqlite
+      # or, from inside the project:
+      PROJECT_LOG_DIR=$PWD/logs node "$CODETRAIL_HOME/mcp/monitor.js"
+
+  Needs **Node 22+** — it uses the built-in `node:sqlite` (still flagged
+  experimental, so Node prints a warning on start) and therefore requires no
+  npm install and no native build. The MCP servers themselves run on Node 20+.
+
 ## project-agent — which implementation runs
 
 `template/startup.sh` auto-detects:

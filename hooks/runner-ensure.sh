@@ -27,12 +27,17 @@ export HOOK_INPUT="$INPUT"
 # Resolve daemon-ctl path. Priority:
 #   1. $CODETRAIL_HOME (set by install.txt) → $CODETRAIL_HOME/scripts/daemon-ctl.sh
 #   2. ~/.codetrail/scripts/daemon-ctl.sh        (install.txt default home)
-#   3. ~/Documents/projects/scripts/daemon-ctl.sh (legacy root layout)
+#   3. ~/projects/{scripts,AI/codetrail/scripts}/daemon-ctl.sh (workspace layout)
+#   4. ~/Documents/projects/... (legacy root — kept last on purpose: macOS TCC
+#      guards Documents/ and can deny reads intermittently, so it must never
+#      shadow a working path above it)
 resolve_daemon_ctl() {
     local cand
     for cand in \
         "${CODETRAIL_HOME:-}/scripts/daemon-ctl.sh" \
         "$HOME/.codetrail/scripts/daemon-ctl.sh" \
+        "$HOME/projects/scripts/daemon-ctl.sh" \
+        "$HOME/projects/AI/codetrail/scripts/daemon-ctl.sh" \
         "$HOME/Documents/projects/scripts/daemon-ctl.sh" \
         "$HOME/Documents/projects/AI/codetrail/scripts/daemon-ctl.sh"
     do

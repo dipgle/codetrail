@@ -13,7 +13,8 @@
 #   3. Prints a one-line "next step"
 #
 # What you get after install:
-#   - `np my-app`     scaffolds ~/Documents/projects/AI/my-app and opens Claude Code
+#   - `np my-app`     scaffolds ~/projects/AI/my-app and opens Claude Code
+#                     (override the root with CODETRAIL_PROJECTS_ROOT)
 #   - `adopt`         scaffolds CLAUDE.md + docs/ + memory/ + logs/devlog.sqlite in pwd
 #   - mcp/            two MCP server implementations (open source, MIT):
 #                     project-agent-node/ — default, cross-platform (Node 20+)
@@ -56,12 +57,16 @@ else
 
 # Codetrail helpers — auto-installed
 export CODETRAIL_HOME="\${CODETRAIL_HOME:-$HOME_DIR}"
+# Projects root. Deliberately NOT under ~/Documents: macOS TCC guards that
+# folder and revokes read access intermittently even with Full Disk Access,
+# which makes the runner daemon fail at random.
+export CODETRAIL_PROJECTS_ROOT="\${CODETRAIL_PROJECTS_ROOT:-\$HOME/projects}"
 
 np() {
   [ -z "\$1" ] && { echo "Usage: np <name|path>"; return 1; }
   local DIR
   if [[ "\$1" == */* ]]; then DIR="\$1"
-  else DIR="\$HOME/Documents/projects/AI/\$1"
+  else DIR="\$CODETRAIL_PROJECTS_ROOT/AI/\$1"
   fi
   "\$CODETRAIL_HOME/template/startup.sh" "\$DIR" || return 1
   cd "\$DIR" && command -v claude >/dev/null 2>&1 && claude || echo "(install Claude Code, then: cd \"\$DIR\" && claude)"
@@ -80,7 +85,7 @@ fi
 echo ""
 echo "Next steps:"
 echo "  1. source $RC   (or open a new terminal)"
-echo "  2. np my-app    (creates ~/Documents/projects/AI/my-app/ and opens Claude)"
+echo "  2. np my-app    (creates ~/projects/AI/my-app/ and opens Claude)"
 echo "     adopt        (scaffolds current dir for Codetrail)"
 echo ""
 echo "Source: https://github.com/dipgle/codetrail"

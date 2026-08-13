@@ -6,7 +6,7 @@ This app lives inside `tfl5/data/default/codetrail/` and serves in tfl5 STATIC m
 ## Local dev
 
 ```bash
-cd ~/Documents/projects/AI/tfl5
+cd ~/projects/AI/tfl5
 TFL5_STATIC_APP=codetrail \
 TFL5_DEV=1 \
 TFL5_BIND=127.0.0.1:8091 \

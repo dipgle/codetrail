@@ -404,8 +404,23 @@ To widen the allowlist for a project-specific command (`npm test`,
 NEVER add destructive prefixes (`rm `, `mv `, `chmod `, `sudo`, `>`
 redirection). The daemon is for safe automation, not escalation.
 
-Rejected commands write `exit: 126` to the result log; check
-`scripts/.cmd-results/audit.log` if a queued command unexpectedly fails.
+A `[prefix]` entry only matches when the tail — whatever follows the
+matched prefix — is free of shell control characters. `grep foo` runs;
+`grep foo; rm -rf ~` is rejected. Do not try to work around this by
+adding the compound form to the allowlist: the check exists because the
+daemon eval's what it accepts.
+
+Rejected commands write `exit: 126` to the result log with the reason;
+check `scripts/.cmd-results/audit.log` if a queued command unexpectedly
+fails.
+
+Each command runs in its own subshell starting at `<project>/scripts/`,
+so a command containing `cd` cannot move the cwd for the next one. A
+command that needs a different directory must `cd` inside itself.
+Projects needing more (an env prefix, a sibling build dir) rename
+`.runner-hooks.sh.example` → `.runner-hooks.sh` and override `eval_cmd`
+there. That file is sourced by the daemon and is NOT allowlist-checked —
+treat editing it as widening the trust boundary, and log it.
 
 
 BEFORE CHANGING CODE

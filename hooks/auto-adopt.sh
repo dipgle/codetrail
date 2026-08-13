@@ -6,7 +6,7 @@
 # Required env (hook is a silent no-op when unset — keeps it inert for users
 # who don't share the multi-project workspace pattern):
 #   CLAUDE_PROJECTS_ROOT  — parent folder containing your projects
-#                           (e.g. ~/Documents/projects). Hook only fires when
+#                           (e.g. ~/projects). Hook only fires when
 #                           cwd is inside this root.
 #   CLAUDE_ADOPT_SCRIPT   — absolute path to a script that scaffolds a folder
 #                           with the codetrail template. Typically

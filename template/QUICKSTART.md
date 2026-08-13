@@ -29,14 +29,18 @@ Mở terminal (macOS/Linux native, hoặc WSL2 Ubuntu trên Windows), paste:
 ```bash
 echo '
 # Claude project helpers
+# CODETRAIL_HOME = nơi bạn clone codetrail. PROJECTS_ROOT = nơi chứa project.
+export CODETRAIL_HOME="${CODETRAIL_HOME:-$HOME/.codetrail}"
+export CODETRAIL_PROJECTS_ROOT="${CODETRAIL_PROJECTS_ROOT:-$HOME/projects}"
+
 np() {
   # Bootstrap NEW project (scaffold + open Claude)
   [ -z "$1" ] && { echo "Usage: np <name|path>"; return 1; }
   local DIR
   if [[ "$1" == */* ]]; then DIR="$1"
-  else DIR="$HOME/Documents/projects/AI/$1"
+  else DIR="$CODETRAIL_PROJECTS_ROOT/AI/$1"
   fi
-  ~/Documents/projects/AI/init-project/startup.sh "$DIR" || return 1
+  "$CODETRAIL_HOME/template/startup.sh" "$DIR" || return 1
   cd "$DIR" && claude
 }
 
@@ -45,7 +49,7 @@ adopt() {
   local DIR="${1:-$(pwd)}"
   [ ! -d "$DIR" ] && { echo "Not a dir: $DIR"; return 1; }
   local BEFORE=$(find "$DIR" -maxdepth 2 -type f 2>/dev/null | sort)
-  ~/Documents/projects/AI/init-project/startup.sh "$DIR" || return 1
+  "$CODETRAIL_HOME/template/startup.sh" "$DIR" || return 1
   local AFTER=$(find "$DIR" -maxdepth 2 -type f 2>/dev/null | sort)
   echo ""
   echo "=== Files added ==="
@@ -59,6 +63,11 @@ source ~/.zshrc
 
 Xong. Bạn có 2 lệnh: `np` (new) và `adopt` (existing).
 
+⚠ `CODETRAIL_HOME` phải trỏ đúng chỗ bạn clone repo này (`install.txt` set
+sẵn `~/.codetrail`). `CODETRAIL_PROJECTS_ROOT` mặc định `~/projects` — **đừng**
+đặt dưới `~/Documents`: macOS TCC gác thư mục đó và thu hồi quyền đọc chập
+chờn ngay cả khi đã cấp Full Disk Access, làm daemon chết ngẫu nhiên.
+
 ## 2. Bắt đầu — 3 trường hợp
 
 ### A. Dự án MỚI từ đầu
@@ -67,7 +76,8 @@ Xong. Bạn có 2 lệnh: `np` (new) và `adopt` (existing).
 np my-app
 ```
 
-Tạo `~/Documents/projects/AI/my-app/`, scaffold đủ template, mở Claude.
+Tạo `$CODETRAIL_PROJECTS_ROOT/AI/my-app/` (mặc định `~/projects/AI/my-app/`),
+scaffold đủ template, mở Claude.
 
 ### B. Dự án CŨ đã có code (chưa từng dùng AI tooling)
 
@@ -119,7 +129,7 @@ Phần dưới là **optional**, chỉ đọc khi cần.
 
 | Tool | Lệnh | Khi nào dùng |
 |------|------|--------------|
-| Real-time monitor | `node ~/Documents/projects/AI/init-project/mcp/monitor.js logs/devlog.sqlite` | Mở terminal khác để xem realtime UC/TC/events |
+| Real-time monitor | `node $CODETRAIL_HOME/mcp/monitor.js logs/devlog.sqlite` | Mở terminal khác để xem realtime UC/TC/events. Chỉ đọc, không ghi. Cần **Node 22+** (dùng `node:sqlite` built-in, không phải cài gì thêm) |
 
 ## Optional — Layer 2: vault (nếu cần secrets cho autonomous)
 
@@ -127,9 +137,9 @@ Chỉ build khi bạn muốn Claude chạy command có secret (DB password, API 
 **mà không bao giờ thấy giá trị thật**:
 
 ```bash
-cd ~/Documents/projects/AI/init-project/mcp/vault
-cargo build --release
-# Xem mcp/vault/README.md cho hướng dẫn dùng
+cd "$CODETRAIL_HOME/mcp/vault-node"
+npm install && npx tsc
+# Xem mcp/vault-node/README.md cho hướng dẫn dùng
 ```
 
 ## Optional — Layer 3: question discipline hook
@@ -159,6 +169,7 @@ my-app/
 ├── TODO.md            ← Task list
 ├── .mcp.json          ← Register MCP devlog
 ├── .runner-allowlist  ← Text allowlist for shared runner daemon (per-project)
+├── .runner-hooks.sh.example  ← Optional eval override; inert until renamed
 ├── scripts/
 │   ├── .cmd-queue/    ← Claude drops <id>.cmd here
 │   └── .cmd-results/  ← Daemon writes <id>.log + audit.log + daemon.pid
@@ -194,7 +205,7 @@ bash $CODETRAIL_HOME/scripts/daemon-ctl.sh restart <project>   # reload allowlis
 bash $CODETRAIL_HOME/scripts/daemon-ctl.sh stop    <project>
 bash $CODETRAIL_HOME/scripts/daemon-ctl.sh list                # tất cả daemon
 
-# `<project>` là tên thư mục dưới ~/Documents/projects/AI/ (hoặc absolute path).
+# `<project>` là tên thư mục dưới $CODETRAIL_PROJECTS_ROOT/AI/ (hoặc absolute path).
 ```
 
 `np`/`adopt` tự call `ensure` ở cuối. SessionStart hook (`runner-ensure.sh`)
@@ -206,5 +217,21 @@ status|log|diff/sqlite3 logs/devlog.sqlite). Edit `.runner-allowlist`
 trong project để thêm command (`npm test`, `cargo build`, …) — mỗi entry
 mở rộng trust boundary, log `kind=decision` để audit. Sau khi sửa
 allowlist phải `daemon-ctl.sh restart <project>` để reload.
+
+Hai luật của tầng so khớp, đừng tìm cách đi vòng:
+
+- Dòng `[prefix]` chỉ khớp khi **phần đuôi** sau prefix không chứa ký tự
+  điều khiển shell. `grep foo` chạy; `grep foo; rm -rf ~` bị từ chối
+  (`exit: 126`, lý do ghi trong log). Không có luật này thì mọi dòng
+  `[prefix]` thực chất là "chạy gì cũng được", vì daemon `eval` thứ nó
+  nhận.
+- Mỗi lệnh chạy trong **subshell riêng, luôn bắt đầu ở `<project>/scripts/`**.
+  Lệnh có `cd` không làm trôi cwd của lệnh sau. Cần thư mục khác thì tự
+  `cd` bên trong chính lệnh đó.
+
+Project cần hành vi eval khác (env prefix, build ở thư mục anh em): đổi tên
+`.runner-hooks.sh.example` → `.runner-hooks.sh` rồi override `eval_cmd`.
+File đó được daemon `source` và **không** bị allowlist kiểm — sửa nó là mở
+rộng trust boundary.
 
 Audit: `<project>/scripts/.cmd-results/audit.log`.
