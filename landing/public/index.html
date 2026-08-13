@@ -255,7 +255,11 @@ adopt</code></pre>
     <section class="waitlist" id="waitlist">
       <h2 data-i18n="wait.title">Stay in the loop</h2>
       <p data-i18n="wait.lede">Codetrail is free and fully MIT-licensed today — clone the repo or run install.txt. Drop your email if you'd like a short note when a major feature ships. No spam, opt-out anytime.</p>
-      <form class="wait-form" id="waitForm" method="POST" data-app-tid="a_dbe794f8-4e11-4b52-aa9f-9a37e429866d" data-form-id="waitlist">
+      <!-- App tid uses a hyphen after the "a", not an underscore. /app/list on
+           the live host returns a-dbe794f8-…; the underscore form matches no app,
+           so the server answers public_form_not_configured and the submit dies.
+           deploy.mjs never hit this because it resolves the app by name. -->
+      <form class="wait-form" id="waitForm" method="POST" data-app-tid="a-dbe794f8-4e11-4b52-aa9f-9a37e429866d" data-form-id="waitlist">
         <input type="email" name="email" required placeholder="you@example.com" data-i18n-attr="placeholder" data-i18n="wait.placeholder" />
         <button type="submit" class="btn primary" data-i18n="wait.submit">Subscribe</button>
       </form>
