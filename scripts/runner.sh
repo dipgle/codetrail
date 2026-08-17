@@ -32,6 +32,14 @@
 #   <project-root>/scripts/.cmd-results/audit.log  # append-only audit
 #   <project-root>/scripts/.cmd-results/daemon.log # daemon stdout/stderr (if via launchd)
 #
+# ENVIRONMENT
+#   PATH is normalized at startup: the directories in RUNNER_PATH_EXTRA
+#   (default /usr/local/bin, /opt/homebrew/bin, ~/.cargo/bin, ~/.local/bin)
+#   are prepended if they exist and are not already there. Without it a
+#   launchd-started daemon runs with PATH=/usr/bin:/bin:/usr/sbin:/sbin and
+#   every job needing node/npx/cargo exits 127 on its first line. The
+#   effective PATH is printed in the startup banner.
+#
 # RELOAD
 #   Allowlist loaded once at start. Edit allowlist → kill + restart daemon
 #   (launchd KeepAlive=true restarts automatically within ~10s).
@@ -78,6 +86,35 @@ QUEUE_DIR="$SCRIPTS_DIR/.cmd-queue"
 RESULT_DIR="$SCRIPTS_DIR/.cmd-results"
 mkdir -p "$QUEUE_DIR" "$RESULT_DIR"
 AUDIT="$RESULT_DIR/audit.log"
+
+# ── PATH normalization ───────────────────────────────────────────────
+# A daemon started by launchd (or systemd) inherits a MINIMAL environment:
+# PATH is /usr/bin:/bin:/usr/sbin:/sbin unless the plist declares
+# EnvironmentVariables. node, npx, cargo and friends live under
+# /usr/local/bin, /opt/homebrew/bin or ~/.cargo/bin, so every job that needs
+# one dies on its FIRST line with `command not found` and exit 127 — while
+# the same command run by hand from a login shell is green. That gap cost
+# three sessions: the failures were written down as "the daemon rejected it"
+# (which is exit 126, a different fix entirely) and nobody read the exit code.
+#
+# Fixing it here rather than in each plist means the daemon behaves the same
+# whether launchd, systemd, or a human started it. Set RUNNER_PATH_EXTRA to
+# override the list; entries that do not exist on this machine are skipped,
+# and nothing already on PATH is duplicated.
+RUNNER_PATH_EXTRA="${RUNNER_PATH_EXTRA:-/usr/local/bin:/opt/homebrew/bin:$HOME/.cargo/bin:$HOME/.local/bin}"
+_path_prefix=""
+_saved_ifs="$IFS"
+IFS=':'
+for _d in $RUNNER_PATH_EXTRA; do
+  [[ -z "$_d" || ! -d "$_d" ]] && continue
+  case ":$PATH:" in *":$_d:"*) continue ;; esac
+  case ":$_path_prefix:" in *":$_d:"*) continue ;; esac
+  _path_prefix="${_path_prefix:+$_path_prefix:}$_d"
+done
+IFS="$_saved_ifs"
+[[ -n "$_path_prefix" ]] && PATH="$_path_prefix:$PATH"
+export PATH
+unset _path_prefix _saved_ifs _d
 
 # ── parse allowlist into 2 arrays ────────────────────────────────────
 declare -a ALLOWLIST_EXACT=()
@@ -191,6 +228,10 @@ run_one() {
 
   {
     echo "---"
+    # 126 (allowlist rejection) and 127 (nothing to run) read alike in a
+    # summary and need opposite fixes, so the log says which one this is.
+    [[ $rc -eq 127 ]] && \
+      echo "hint: 127 = command not found — the allowlist ALLOWED this (a rejection is 126). PATH=$PATH"
     echo "exit: $rc"
   } >> "$result_file"
 
@@ -202,6 +243,7 @@ echo "🛡  runner.sh watching $QUEUE_DIR/  — project=$PROJECT_ROOT"
 echo "    EXACT allowlist: ${#ALLOWLIST_EXACT[@]} commands"
 echo "    PREFIX allowlist: ${#ALLOWLIST_PREFIX[@]} patterns"
 echo "    Audit: $AUDIT"
+echo "    PATH: $PATH"
 echo ""
 
 while true; do

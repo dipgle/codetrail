@@ -440,19 +440,20 @@ treat editing it as widening the trust boundary, and log it.
 
 A daemon started by launchd/systemd inherits a MINIMAL environment: PATH
 is `/usr/bin:/bin:/usr/sbin:/sbin`, so `node`, `npx`, `cargo` and
-anything else under `/usr/local/bin` or `/opt/homebrew/bin` does not
-resolve — the job dies on its first line with `command not found` and
-`exit: 127`. Any script you queue must declare its own PATH at the top:
+anything else under `/usr/local/bin` or `/opt/homebrew/bin` would not
+resolve. `runner.sh` normalizes PATH at startup and prints the effective
+value in its banner; `RUNNER_PATH_EXTRA` overrides the list. A script
+that also runs OUTSIDE the daemon still declares its own:
 
     export PATH="/usr/local/bin:/opt/homebrew/bin:$PATH"
+    command -v node >/dev/null || { echo "node not found (PATH=$PATH)" >&2; exit 127; }
 
-then resolve the interpreter explicitly and fail loudly
-(`echo "node not found (PATH=$PATH)" >&2; exit 127`) instead of letting
-"command not found" scroll past. When a queued job "doesn't work", read
-the real exit code out of `.cmd-results/<id>.log` BEFORE writing
-"rejected/blocked" into the devlog — a 127 (environment) and a 126
-(allowlist rejection) need opposite fixes, and recording the wrong one
-sends the next session hunting in the wrong place.
+When a queued job "doesn't work", read the real exit code out of
+`.cmd-results/<id>.log` BEFORE writing "rejected/blocked" into the
+devlog — `126` is the allowlist refusing the command, `127` is the
+command not being there at all, and they need opposite fixes. The
+runner labels the 127 case in the result log; recording the wrong one
+sends the next session hunting in the wrong place for days.
 
 
 WHEN A PreToolUse REVIEWER RETURNS BLOCK (TRIGGER → CHECK)

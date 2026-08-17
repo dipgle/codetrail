@@ -328,9 +328,17 @@ A third one produces an honest error that is easy to *misfile*: a daemon
 started by launchd inherits a minimal `PATH` (`/usr/bin:/bin:/usr/sbin:/sbin`)
 unless the plist declares `EnvironmentVariables`. `node`, `npx` and `cargo` live
 under `/usr/local/bin` or `/opt/homebrew/bin`, so a job needing them dies on its
-first line with `command not found` and `exit: 127`. Either declare the PATH in
-the plist, or — simpler, and portable across launchd/systemd/manual starts —
-have every queued script export its own:
+first line with `command not found` and `exit: 127`. `runner.sh` normalizes
+this at startup — it prepends `/usr/local/bin`, `/opt/homebrew/bin`,
+`~/.cargo/bin` and `~/.local/bin` when they exist, prints the effective PATH in
+its banner, and tags any `exit: 127` result with a line saying so. Override the
+list per machine:
+
+```sh
+RUNNER_PATH_EXTRA="/opt/local/bin:/usr/local/bin" bash scripts/runner.sh <project>
+```
+
+A script that must also run outside the daemon still wants its own guard:
 
 ```sh
 export PATH="/usr/local/bin:/opt/homebrew/bin:$PATH"

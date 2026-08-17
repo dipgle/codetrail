@@ -26,6 +26,15 @@
 #                  silent, order-dependent, and the reason a working script
 #                  started returning exit 127 half an hour later
 #   unlisted       a command matching nothing is rejected
+#   path           the daemon is started here with launchd's minimal PATH
+#                  (/usr/bin:/bin:/usr/sbin:/sbin) on purpose. A tool sitting
+#                  in an extra dir — node under /usr/local/bin in real life —
+#                  must still resolve, and a listed dir that does not exist
+#                  must not be pasted onto PATH
+#   notfound       a command that IS allowlisted but resolves to nothing exits
+#                  127, and the log must say so rather than let it be filed as
+#                  a 126 allowlist rejection — that mix-up hid a broken build
+#                  for three sessions
 #
 # Add a case here whenever a runner defect is found. A fix without a case is
 # a fix that comes back.
@@ -56,12 +65,24 @@ mkdir -p "$PROJ/scripts"
 cat > "$PROJ/.runner-allowlist" <<'ALLOWLIST'
 [exact]
 pwd
+fakebin-tool
+no-such-binary-xyz
 [prefix]
 ls
 cd /tmp && pwd
 ALLOWLIST
 
-bash "$RUNNER" "$PROJ" > "$WORK/daemon.log" 2>&1 &
+# Stand-in for `node` living somewhere launchd's PATH cannot see.
+mkdir -p "$WORK/fakebin"
+printf '#!/bin/sh\necho FAKEBIN_OK\n' > "$WORK/fakebin/fakebin-tool"
+chmod +x "$WORK/fakebin/fakebin-tool"
+
+# Start the daemon the way launchd would: minimal PATH, no login shell. The
+# extra dirs are handed over via RUNNER_PATH_EXTRA, one real and one absent,
+# so both halves of the normalization are exercised.
+PATH="/usr/bin:/bin:/usr/sbin:/sbin" \
+RUNNER_PATH_EXTRA="$WORK/fakebin:$WORK/nope" \
+    bash "$RUNNER" "$PROJ" > "$WORK/daemon.log" 2>&1 &
 DAEMON_PID=$!
 
 # Wait for the daemon to finish parsing the allowlist and start polling.
@@ -160,6 +181,20 @@ echo "[unlisted] a command matching no line is rejected"
 BODY="$(run_cmd t5 'whoami')" || exit 1
 check "unlisted/rejected" has "REJECTED"  "$BODY"
 check "unlisted/exit"     has "exit: 126" "$BODY"
+
+echo "[path] a tool outside launchd's minimal PATH still resolves"
+BODY="$(run_cmd t6 'fakebin-tool')" || exit 1
+check "path/exit"     has "exit: 0"     "$BODY"
+check "path/output"   has "FAKEBIN_OK"  "$BODY"
+BANNER="$(cat "$WORK/daemon.log")"
+check "path/prepended"    has   "$WORK/fakebin" "$BANNER"
+check "path/skips-absent" lacks "$WORK/nope"    "$BANNER"
+
+echo "[notfound] an allowed command that resolves to nothing is 127, and says so"
+BODY="$(run_cmd t7 'no-such-binary-xyz')" || exit 1
+check "notfound/exit"     has   "exit: 127"                "$BODY"
+check "notfound/hint"     has   "127 = command not found"  "$BODY"
+check "notfound/not-126"  lacks "REJECTED"                 "$BODY"
 
 echo ""
 if [ "$FAILURES" -eq 0 ]; then
