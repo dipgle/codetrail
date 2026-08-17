@@ -4,6 +4,13 @@ The user should only interact naturally through chat.
 
 Do not require manual session management.
 
+This file is the PROJECT tier: how work runs inside this project. The
+workspace tier — definition of done, acceptance doctrine, shell discipline,
+reporting, team execution — lives in the workspace root's CLAUDE.md
+(shipped as codetrail's `template/WORKSPACE-CLAUDE.md`) and is read on every
+turn alongside this one. Where the two overlap, the workspace file is the
+canon and this file is the local detail.
+
 
 PROJECT BOOTSTRAP (first session in an empty project)
 

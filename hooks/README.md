@@ -133,24 +133,26 @@ the only tier that can carry a rule the model must apply on **every** turn —
 memory-file bodies are not loaded into context, so a rule that must fire each
 time belongs here (or in a hook), written as TRIGGER → CHECK.
 
-Start from [`../template/CLAUDE.md`](../template/CLAUDE.md) and add, at minimum:
+Do not write it from scratch — copy the shipped rulebook and fill in its
+placeholders:
 
-- how to resolve a bare project name to a folder (session entry);
-- the definition of done the project holds itself to;
-- which commands go through the daemon rather than direct Bash;
-- where deliverables live — files the agent produces belong in the project
-  tree, handed back as a path, not published to an external service or
-  answered with a hosted link (template HARD RULE 8);
-- what to do when a `PreToolUse` reviewer returns BLOCK, written as
-  TRIGGER → CHECK. That reviewer is an LLM, so it is not deterministic and a
-  block ends the entire turn; the recipe that gets a legitimate command
-  through is in the template under *WHEN A PreToolUse REVIEWER RETURNS
-  BLOCK*. Its core finding is worth repeating here: **the reviewer reads the
-  Bash tool's `description` field as well as the command**, so the
-  description has to carry the safety properties — same `git push`, blocked
-  twice as "Push commit to origin main", allowed immediately as "Non-force
-  fast-forward push, repo pinned with -C, verified toplevel + branch main,
-  no --force, no history rewrite".
+```bash
+cp ~/projects/AI/codetrail/template/WORKSPACE-CLAUDE.md ~/projects/CLAUDE.md
+```
+
+[`template/WORKSPACE-CLAUDE.md`](../template/WORKSPACE-CLAUDE.md) is the whole
+canon in one file: which tier a rule has to live in to fire at all, session
+entry, the definition of done, the ten principles against shallow work, the
+acceptance doctrine (business data through the real UI, one UC asserted at
+three layers, cross-browser, no blind assertions), the four checks before every
+shell command, what to do when a `PreToolUse` reviewer returns BLOCK, the
+daemon, reporting and question discipline, team execution, data safety, and a
+table of house conventions to fill in.
+
+Two placeholders are mandatory: `<WORKSPACE_ROOT>` and `<CODETRAIL_HOME>`. The
+per-project [`template/CLAUDE.md`](../template/CLAUDE.md) stays what it is — the
+project's own process (devlog, use cases, TDD) — and is installed by
+`startup.sh`, not by hand.
 
 ### 4. Permissions — `~/projects/.claude/settings.json`
 
