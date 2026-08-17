@@ -197,6 +197,22 @@ HARD RULES (non-negotiable, project-template baseline)
 
    See HARD RULE #6 for the post-draw render-and-audit workflow.
 
+8. DELIVERABLES STAY IN THE PROJECT
+   Every file you produce — report, doc, dashboard, chart, diagram — is
+   written INTO the project tree and handed back as a path. Do not
+   publish it to an external service, do not attach it to a chat
+   message, do not answer with a hosted link. A file that lives outside
+   the project does not travel with git, cannot be found again by the
+   next session, and ships work product to a third party nobody asked
+   for.
+     a. Write to `$PROJECT_DIR/…` — `docs/` for durable output,
+        `.tmp/` for scratch. Never to another project or a system temp
+        dir.
+     b. Answer with the absolute path.
+     c. To view it in a browser: open the local file, or serve it from
+        the project's own infrastructure.
+     d. Log it (`log_event kind=artifact`) like any other output.
+
 
 PROJECT KNOWLEDGE STRUCTURE
 
@@ -421,6 +437,68 @@ Projects needing more (an env prefix, a sibling build dir) rename
 `.runner-hooks.sh.example` → `.runner-hooks.sh` and override `eval_cmd`
 there. That file is sourced by the daemon and is NOT allowlist-checked —
 treat editing it as widening the trust boundary, and log it.
+
+A daemon started by launchd/systemd inherits a MINIMAL environment: PATH
+is `/usr/bin:/bin:/usr/sbin:/sbin`, so `node`, `npx`, `cargo` and
+anything else under `/usr/local/bin` or `/opt/homebrew/bin` does not
+resolve — the job dies on its first line with `command not found` and
+`exit: 127`. Any script you queue must declare its own PATH at the top:
+
+    export PATH="/usr/local/bin:/opt/homebrew/bin:$PATH"
+
+then resolve the interpreter explicitly and fail loudly
+(`echo "node not found (PATH=$PATH)" >&2; exit 127`) instead of letting
+"command not found" scroll past. When a queued job "doesn't work", read
+the real exit code out of `.cmd-results/<id>.log` BEFORE writing
+"rejected/blocked" into the devlog — a 127 (environment) and a 126
+(allowlist rejection) need opposite fixes, and recording the wrong one
+sends the next session hunting in the wrong place.
+
+
+WHEN A PreToolUse REVIEWER RETURNS BLOCK (TRIGGER → CHECK)
+
+Some workspaces install an LLM-backed `PreToolUse:Bash` reviewer that
+judges each command before it runs. It is a model, so it is NOT
+deterministic — the same command can pass five times and be blocked the
+sixth. Nothing is half-done when it fires, but the BLOCK ends the whole
+turn: everything else you batched into that turn is lost and the user
+has to type "continue".
+
+TRIGGER: a tool result reading `PreToolUse:Bash hook error: … BLOCK …`.
+CHECK — five steps, in order, do not improvise:
+
+  1. Do NOT resend it verbatim, and do NOT wrap it in a script
+     (`bash ./x.sh`, or enqueueing it to the daemon). The reviewer reads
+     a script as an opaque box it cannot inspect for `--force`, so
+     wrapping makes a block MORE likely. Do not adopt the flag the
+     reviewer itself suggests either — the next turn it blocks that flag.
+  2. Establish safety with READ-ONLY commands first; read-only is on the
+     fast path: `grep -nE "force|rm|ssh|push" <script>`,
+     `git -C <abs> rev-parse --show-toplevel`,
+     `git -C <abs> branch --show-current`,
+     `git -C <abs> log --oneline origin/main..HEAD`.
+  3. Resend the command EXPLICITLY (no wrapper) and state the safety
+     properties in the `description` field. The reviewer reads the
+     description, not just the command: `git -C /…/repo push origin main`
+     described as "Push commit to origin main" was blocked twice; the
+     identical command described as "Non-force fast-forward push, repo
+     pinned with -C, verified toplevel + branch main, no --force, no
+     history rewrite" was allowed immediately. The description must
+     answer the five things it scores: irreversible data loss, rewriting
+     shared history, hitting the wrong repo in a nested tree, changing
+     production state, and the agent modifying its own config.
+  4. Verify AFTER the command runs (e.g. `git rev-list --count
+     origin/main..HEAD` = 0). Never trust the exit code of something
+     that merely launches.
+  5. Ceiling of two attempts. If step 3's form is already correct and it
+     is still blocked, STOP and hand the command to the user to run —
+     do not loop variants. For production deploys and production DB
+     writes there is no path for the agent at all; say so up front
+     rather than discovering it twice.
+
+Because a BLOCK kills the whole turn, never batch another state-changing
+call into the same turn as a command likely to be reviewed. Read-only
+calls batch freely.
 
 
 BEFORE CHANGING CODE
