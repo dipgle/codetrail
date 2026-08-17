@@ -5,8 +5,10 @@ the **root tier**: the one file every Claude Code session in every project under
 the workspace reads on every turn. `template/CLAUDE.md` (per project) carries
 the project's own process; this file carries how work is done at all.
 
-Placeholders to fill: `<WORKSPACE_ROOT>` (e.g. `~/projects`), `<CODETRAIL_HOME>`,
-and the house conventions in §11.
+Placeholders to fill: `<WORKSPACE_ROOT>` (e.g. `~/projects`) and
+`<CODETRAIL_HOME>`. §11 ships the house conventions this workspace actually
+runs on — chart library, test driver, git rhythm, language per audience. Keep
+them or replace them with yours, but keep *a* decision in every row.
 
 Keep it in the language you actually work in. Translate the rules if that is not
 English — a rule the reader skims past is a rule that does not fire.
@@ -392,21 +394,38 @@ stale base — check what it branched from before trusting its diff.
 
 ---
 
-## 11. House conventions — fill these in
+## 11. House conventions
 
-These are the choices a workspace makes once so no session has to re-litigate
-them. Replace with yours; the shape matters more than the values.
+Choices this workspace made once so no session has to re-litigate them. They are
+real values, not examples — swap them for yours when you adopt this file, but
+swap them for *something*: "decide per case" is how a workspace ends up with
+four chart libraries.
 
 | Area | Convention |
 |---|---|
-| Conversation language | `<e.g. Vietnamese in chat, English in code comments>` |
-| UI charts | `<one library, e.g. Apache ECharts — name it and mean it>` |
-| Web/E2E testing | `<one driver, e.g. Playwright headless, real backend>` |
-| Design source of truth | `<e.g. HTML mockup first, then Figma; neither → ask, do not invent UI>` |
-| Document formatting | `<e.g. office documents: Times New Roman 14>` |
-| Git rhythm | `<e.g. batch work, ~1 push/day; no commit after every small step>` |
-| Marketing copy | `<e.g. no competitor comparisons; simple pricing>` |
+| Chat | Vietnamese — answers, summaries, reports, questions. Identifiers, commands, paths, and technical terms stay as they are |
+| Code comments | English, always, including in a Vietnamese-speaking session |
+| User-facing text | By audience, not by mood — see below |
+| Printed / exported Vietnamese administrative documents | Times New Roman 14 (TT 01/2011/TT-BNV, NĐ 30/2020/NĐ-CP) — `.docx`, `.xlsx`, PDF, and `@media print` CSS. Not screen UI, not code, not transactional email |
+| UI charts | **Apache ECharts**, every project, vanilla file or bundler alike. Not Chart.js, D3, Recharts, Highcharts, Plotly, or Google Charts unless the user names one for that job |
+| Web / E2E testing | **Playwright** headless — load each page, click every button and tab, type in the inputs, capture console errors and uncaught exceptions, assert zero. Against a real backend; a mock hides exactly the data-dependent failures |
+| Design source of truth | HTML mockup first, Figma second, **neither → stop and ask**. Do not invent a UI |
+| Deviating from the mockup | Only for a measured technical reason, recorded at the point of deviation. A deliberate-but-undocumented deviation is still a deviation |
+| Git rhythm | Commit per meaningful stretch, **≈1 push/day**. No commit after every file, no amend + force-push to fix a typo in a message, no force-push, no direct work on `main` |
+| Marketing surfaces | No competitor comparisons anywhere user-facing — no vs-tables, no "how is this different from X" FAQ, no rival product named in titles or meta tags. Show the model, not the core: capabilities in user language, never struct names, env vars, file paths, table schemas, or internal version numbers |
+| Deliverables | In the project tree, handed over as a path (§8) |
+| Secrets | Vault reference, never a literal — not in chat, code, logs, or git |
 
-Two that are not optional, wherever they land: **code comments in English**, and
-**no credentials in chat, code, logs, or git** — route secrets through a vault
-reference, never a literal.
+**User-facing text, by audience.** Public and platform surfaces — landing pages,
+end-user guides, public API docs, the UI of a product aimed at an international
+audience — are **100% English**, no mixed sentences, even when the session is in
+Vietnamese. Products built for Vietnamese public-sector users are the opposite:
+UI and exported documents in **plain Vietnamese**, with the jargon actually
+translated (module → chức năng, dashboard → bảng điều khiển, snapshot → số liệu
+chốt), keeping English only where it is unavoidable — login identifiers, system
+resource and field codes, and acronyms Vietnamese readers already use (QR, KPI,
+OTP, VNeID). Internal docs, decision logs, and this file may be in either.
+
+**One entity, one word.** Whatever the schema calls a thing is what the UI calls
+it. Synonyms drifting between table, API, and screen ("app" in the database,
+"workspace" on the button) cost more than they ever save.
