@@ -8,6 +8,7 @@
 use anyhow::Result;
 use rmcp::{
     handler::server::{router::tool::ToolRouter, wrapper::Parameters, ServerHandler},
+    model::{ServerCapabilities, ServerInfo},
     schemars, tool, tool_handler, tool_router,
     transport::stdio,
     ServiceExt,
@@ -820,7 +821,18 @@ impl ProjectAgent {
 }
 
 #[tool_handler]
-impl ServerHandler for ProjectAgent {}
+impl ServerHandler for ProjectAgent {
+    // rmcp's default declares `capabilities: {}`; a spec-following client
+    // (opencode) then never calls `tools/list` and sees zero tools.
+    // Locked by tests/initialize_capabilities.rs.
+    fn get_info(&self) -> ServerInfo {
+        let mut info = ServerInfo::default();
+        info.capabilities = ServerCapabilities::builder().enable_tools().build();
+        info.server_info.name = env!("CARGO_PKG_NAME").to_owned();
+        info.server_info.version = env!("CARGO_PKG_VERSION").to_owned();
+        info
+    }
+}
 
 #[tokio::main]
 async fn main() -> Result<()> {
